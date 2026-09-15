@@ -1,0 +1,143 @@
+# UrbanPulse backend - Abd's work
+
+This folder contains the FastAPI API, PostgreSQL/PostGIS schema and queries, caching,
+request validation, external source clients, and connection points for the team's
+data, calculations and AI.
+It implements the ten routes in the blueprint. No real city data or teammate
+components were supplied, so nothing is seeded and unavailable components return 503.
+
+The project folder was empty before this work. Both source PDFs were read in full:
+`UrbanPulse_ABD_Codex_Brief (1).pdf` (4 pages) and
+`UrbanPulse_Full_GIBC_V2_Blueprint.pdf` (13 pages).
+The team subsequently confirmed that Abd owns both external requests and internal
+routes. Abd fetches raw responses safely and passes them to Arjun's pipeline;
+data interpretation/processing and scientific calculations stay with their owners.
+The blueprint's frontend and illustrative formulas have not been implemented here.
+
+## External source connections
+
+Direct raw-data clients are implemented for Open-Meteo Air Quality and Overpass.
+Public catalog clients are implemented for Landsat, Sentinel-2, Earthdata
+IMERG/SRTM and WorldPop. Catalog metadata is not a measurement or processed raster.
+
+[Source inspection and connection documentation](docs/source-connections.md)
+lists every blueprint source, the verified APIs, implemented calls and remaining
+file/credential requirements. HTTPX is now a runtime dependency; update an existing
+environment with `python -m pip install -r requirements-dev.txt`.
+
+The external calls are invoked by the data pipeline using agreed selections and
+Arjun's raw receiver. They do not automatically run from dashboard routes or at
+startup. [The handoff](docs/teammate-handoff.md) includes the exact call site.
+
+## Run it on this computer
+
+The project's `.venv` already has the backend and test dependencies installed.
+From this folder in PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+Open <http://127.0.0.1:8000/docs> for the API documentation.
+Without a database, `/api/cities` returns a clear `database_not_configured` error.
+This is expected, and is not an empty or zero-risk city.
+
+## Set up on another computer
+
+Install Python 3.12, then run:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+Copy-Item .env.example .env
+```
+
+On macOS/Linux use `python3.12 -m venv .venv`, `.venv/bin/python`, and
+`cp .env.example .env`. Production only needs `requirements.txt`.
+
+When the team supplies a PostgreSQL connection, set `DATABASE_URL` in `.env`.
+Use a dedicated empty database with PostGIS available. Run the initial schema once:
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.database.init_db
+```
+
+This creates the blueprint's six tables and no data. It is not a migration for an
+existing database. The setup account needs permission to create tables and enable
+PostGIS, or the database owner must enable the extension first.
+Keep the connection string out of source control and frontend code.
+
+Set `CORS_ORIGINS` to Phantom's actual frontend origins and `ALLOWED_HOSTS` to the
+backend's actual hostnames. Their values are JSON arrays, as shown in `.env.example`.
+
+## Send teammates
+
+Share `backend/`, both requirements files, `.env.example`, `Dockerfile`,
+`.dockerignore`, `.gitignore`, `tests/`, `pytest.ini`, this README and `docs/`.
+Do not include `.venv`, `.env`, caches or temporary PDF images.
+
+- Phantom and Infinity: [API contract](docs/backend-contract.md). It explains
+  each request, response and missing-data case. `/openapi.json` contains the
+  machine-readable route schemas.
+- Arjun and Chip: [connection guide](docs/teammate-handoff.md), including the
+  processed-data importer and exact locations where their functions are called.
+- Abd: [deployment notes](docs/deployment.md) for the portable container and the
+  environment details still needed.
+
+## What still needs the team
+
+| Owner | Missing input |
+| --- | --- |
+| Arjun + Abd | Real source selections/requests, raw receiver, needed download access and files |
+| Arjun | Processing decisions and code; processed city/area/grid records, measurements, units, dates and source limitations |
+| Infinity + Arjun | Actual boundaries/grid geometry, stable IDs, aligned WGS84 GeoJSON; agreement on the layer transport choices |
+| Chip | Area risk and exposure adapter, aggregation rules, score meanings, thresholds, units and methodology |
+| Arjun + Chip | Simulator function, request schema/ranges/units, scenario-field mapping and documented assumptions |
+| Arjun | AI adapter, strict request/response schemas, provider configuration and controlled prompts |
+| Phantom | Frontend origin and agreement on the documented provisional response shapes |
+| Ayesha + Chip | Scientific validation, citations and limitations |
+| Team + Abd | PostgreSQL/PostGIS connection and chosen hosting environment |
+
+No live teammate component is connected yet. The database routes work once their
+records are loaded. Risk, simulation and AI remain explicitly unavailable until
+their adapters are registered. External clients have passed limited live
+connectivity checks, but no team dataset or processing pipeline is connected.
+The existing service projections still accept processed records for the routes.
+
+The team's frontend upload was reviewed at commit
+`a7c790c0965db4c90e4f1aa601a83023ebbe5430`. It is still backed by
+`lib/mock-data.ts` and contains no live API calls. Abd's compatibility update keeps
+the ten blueprint routes, adds the already-existing population-exposure score to the
+risk response, and documents the population response in OpenAPI. See the
+[API contract](docs/backend-contract.md#current-frontend-integration) and the
+[frontend handoff](docs/teammate-handoff.md#mapping-the-uploaded-frontend). No team
+frontend file was changed or copied into the backend.
+
+## Checks
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+The latest recorded checks are in [verification.md](docs/verification.md).
+All test records and provider responses are synthetic and exist only in `tests/`.
+They do not verify scientific results, real datasets or real AI behaviour.
+
+An optional PostGIS test runs if `TEST_DATABASE_URL` is set in the shell to a
+**disposable test database**, with PostGIS already enabled. It creates and removes
+only a generated test schema. It checks SQL, GeoJSON round trips, latest records,
+upserts, transaction rollback and scenario writes.
+
+## AI disclosure and Built With
+
+OpenAI Codex assisted with this backend implementation, tests and documentation.
+Abd and the team must review and understand the code before submission.
+Keep **OpenAI Codex (AI coding assistance)** in the submission's **Built With** field.
+This disclosure follows the supplied blueprint; event rules were not independently
+reverified during this backend task.
+
+Built With: Python, FastAPI, Uvicorn, PostgreSQL, PostGIS, asyncpg, Pydantic,
+pydantic-settings, geojson-pydantic, pytest, HTTPX, and OpenAI Codex.
+PostgreSQL/PostGIS are the intended database stack and have not been run locally.
+No runtime LLM provider or project dataset is configured. External source metadata
+and transport checks do not count as scientific validation or a loaded city dataset.
