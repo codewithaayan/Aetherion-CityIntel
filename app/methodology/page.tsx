@@ -32,7 +32,7 @@ export default function MethodologyPage() {
   const pipelineStages = [
     { name: "SATELLITE DATA", desc: "Multi-spectral radiance from Landsat 9, Sentinel-2, and NASA GPM.", icon: Satellite, step: "01" },
     { name: "ENVIRONMENTAL PROCESSING", desc: "LST calculation, NDVI index extraction, and atmospheric corrections.", icon: Cpu, step: "02" },
-    { name: "GEOSPATIAL GRID", desc: "100m² metric pixel decomposition aligned with OpenStreetMap vectors.", icon: Grid, step: "03" },
+    { name: "GEOSPATIAL GRID", desc: "250m² metric pixel decomposition aligned with OpenStreetMap vectors.", icon: Grid, step: "03" },
     { name: "RISK MODELLING", desc: "Multi-Criteria Decision Analysis (MCDA) weighting environmental dimensions.", icon: ShieldAlert, step: "04" },
     { name: "POPULATION EXPOSURE", desc: "WorldPop gridded demographic overlay to quantify citizens at risk.", icon: Users, step: "05" },
     { name: "AI INTERPRETATION", desc: "Structured diagnostic reasoning and actionable civic recommendations.", icon: Sparkles, step: "06" },

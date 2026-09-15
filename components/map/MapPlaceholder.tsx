@@ -103,7 +103,7 @@ export function MapPlaceholder({
           </div>
 
           <p className="text-[11px] text-slate-400 max-w-xs leading-relaxed">
-            High-performance WebGL rasterizer with vector tile overlays, heat-stress contours, and 100m² grid rasterization.
+            High-performance WebGL rasterizer with vector tile overlays, heat-stress contours, and 250m² grid rasterization.
           </p>
 
           {/* Quick link to explore this area in detail */}
@@ -146,7 +146,7 @@ export function MapPlaceholder({
             }`}
             title="Toggle Spatial Grid Lines"
           >
-            Grid 100m²
+            Grid 250m²
           </button>
 
           {/* Zoom Controls */}

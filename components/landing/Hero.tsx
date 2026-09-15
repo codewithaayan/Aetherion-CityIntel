@@ -63,7 +63,7 @@ export function Hero() {
             <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-4 text-left">
               <div>
                 <div className="text-xl font-bold font-mono text-white flex items-baseline gap-1">
-                  100<span className="text-xs text-cyan-400 font-normal">m²</span>
+                  250<span className="text-xs text-cyan-400 font-normal">m²</span>
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono uppercase tracking-wider">
                   Grid Resolution

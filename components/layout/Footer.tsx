@@ -95,7 +95,7 @@ export function Footer() {
             <div className="space-y-2 text-[11px] font-mono text-slate-400">
               <div className="flex items-center justify-between border-b border-slate-800/60 pb-1">
                 <span className="text-slate-500">Spatial Grid:</span>
-                <span className="text-slate-300">100m² Res</span>
+                <span className="text-slate-300">250m² Res</span>
               </div>
               <div className="flex items-center justify-between border-b border-slate-800/60 pb-1">
                 <span className="text-slate-500">Confidence:</span>

@@ -20,12 +20,12 @@ const CAPABILITIES = [
     title: "Neighbourhood Analysis",
     tagline: "Grid-level environmental understanding.",
     description:
-      "High-precision 100m² grid cell decomposition mapping thermal islands, canopy gaps, drainage vulnerability, and traffic stress.",
+      "High-precision 250m² grid cell decomposition mapping thermal islands, canopy gaps, drainage vulnerability, and traffic stress.",
     icon: Grid,
     badge: "Spatial Resolution",
     color: "emerald",
     href: "/area/gulshan-iqbal",
-    metrics: "100m² Cell Granularity",
+    metrics: "250m² Cell Granularity",
   },
   {
     title: "AI Insights",
