@@ -1,0 +1,269 @@
+# Connecting the team's work
+
+The team confirmed that Abd owns **external API requests and internal backend
+routes**, including request safety and passing raw responses to Arjun's pipeline.
+Arjun helps choose and understand the data and owns processing and AI logic with
+the appropriate teammates. This clarification supersedes the earlier handoff's
+assignment of provider fetching to Arjun. Scientific ownership remains unchanged.
+
+## Abd + Arjun: raw source handoff
+
+[Source connections](source-connections.md) records every blueprint source, the
+verified access method, implemented functions, credentials/files still needed,
+and the raw response contract. The outbound clients do not run at startup or when
+Phantom requests a dashboard. The data pipeline invokes them with agreed selections.
+
+The exact request call is `SourceHTTP._send()` in `backend/services/external.py`.
+Source-specific request functions live in `air_quality.py`, `osm.py`,
+`satellite.py`, `earthdata.py` and `population.py`. They return `RawResponse`.
+`fetch_for_pipeline()` is the connection point that calls Arjun's raw receiver:
+
+```python
+from backend.config.settings import Settings
+from backend.services.air_quality import fetch_air_quality
+from backend.services.external import SourceHTTP, fetch_for_pipeline
+from backend.services.source_requests import AirQualityRequest
+
+async def collect_air_quality(agreed_selection, arjun_receive_raw):
+    selection = AirQualityRequest.model_validate(agreed_selection)
+    async with SourceHTTP(Settings()) as http:
+        return await fetch_for_pipeline(
+            lambda: fetch_air_quality(http, selection),
+            arjun_receive_raw,
+        )
+```
+
+Both arguments are supplied by the team; no location, dates, default dataset or
+processing implementation is fabricated. For repeated requests, hold one
+`SourceHTTP` context open for the whole pipeline run so it shares pacing and cache.
+
+Arjun provides `async def receive_raw(response: RawResponse) -> None`. It receives
+the original JSON bytes, parsed payload, source/request metadata and cache status.
+The receiver decides what to retain/process. It must distinguish `catalog` metadata
+from `data`, and treat `fetched_at` as retrieval time, not a measurement timestamp.
+If the receiver is `None`, `fetch_for_pipeline` raises `data_pipeline_not_configured`
+before making a request. Failed fetches never reach the receiver. Receiver exceptions
+propagate to the caller; the helper never claims ingestion succeeded or retries it.
+
+Only after Arjun produces validated processed records should the existing importer
+below be used. Abd does not map air variables into database fields, derive geometry
+from OSM, calculate temperatures/NDVI, sum population, or fill missing measurements.
+
+## Arjun: load processed records
+
+Use `backend.database.ingest.import_processed(database, batch, cache=None)` from
+your ingestion code. This is an internal Python interface, not a public upload API.
+The accepted `ProcessedBatch` keys are `cities`, `areas`, `grid_cells`,
+`environmental_data`, and `risk_scores`. Each contains records with the exact
+blueprint fields defined in `backend/models/`. Empty lists are allowed.
+
+The helper validates the whole batch before writing, inserts parents first, and
+upserts by ID within one transaction. A failure rolls back the batch. An omitted
+nullable field becomes null on upsert; imports replace a record rather than patch
+individual fields. It never deletes missing records. Use stable IDs, especially
+when updating an existing cell/timestamp. Scientific calculations must already
+have been performed by their owners before loading `risk_scores`.
+
+Usage from the owner's code, with a real processed payload:
+
+```python
+from backend.config.settings import Settings
+from backend.database.connection import Database
+from backend.database.ingest import import_processed
+
+async def save_team_records(processed_payload):
+    database = Database(Settings())
+    await database.open()
+    try:
+        await import_processed(database, processed_payload)
+    finally:
+        await database.close()
+```
+
+The caller supplies `processed_payload`; there is no sample city dataset bundled.
+Provide 2D WGS84 longitude/latitude GeoJSON geometry, or null when missing. The helper
+does not align coordinates, create a grid, fill measurements or convert units.
+Source timestamps need an explicit timezone. A source's unit, date, resolution and
+limitations must be documented by Arjun/Ayesha before the frontend presents it.
+
+Use a separate ingestion database role with write access to those five tables.
+The API role needs SELECT on those tables and INSERT on `scenarios`; it does not
+need schema creation or general data-editing privileges.
+
+The original `weather_data`, `air_quality_data`, `satellite_data` and
+`population_data` helpers still project processed records for the existing routes.
+They preserve nulls and source timestamps. The new external fetch functions are
+separate acquisition calls; they do not change those helpers or the importer.
+
+## Register adapters without changing routes
+
+`backend.integrations.Components` has four optional slots: `risk`, `layers`,
+`simulator` and `ai`. Each starts disconnected. A team-owned factory function can
+return a configured `Components` instance. Set its import location in `.env`:
+
+```text
+TEAM_COMPONENTS_FACTORY=your_team_module:build_components
+```
+
+That path is a placeholder for a module the team supplies, not a bundled module.
+The factory is loaded from trusted server configuration at startup, never from a
+request. Invalid factories fail startup with a configuration message.
+For embedded use/tests, `create_app(settings, components)` takes the same object.
+
+The types and call signatures are:
+
+| Slot | Signature | Output contract |
+| --- | --- | --- |
+| `risk` | `async def calculate(context: dict) -> dict` | `RiskResult` |
+| `layers` | `async def layer(area_id: str, layer: str) -> dict` | `MapLayer` |
+| `simulator` | `JSONComponent(RequestModel, ResponseModel, run)` | Response model must include `scenario: ScenarioValues` |
+| `ai` | `JSONComponent(RequestModel, ResponseModel, run)` | Arjun supplies the structured analysis schema |
+
+`run` is `async def run(request: dict, context: dict) -> dict`. The request has
+already passed the owner's request schema. Return a plain JSON-compatible object,
+not a Pydantic instance, JSON string, free text or streaming response.
+Use `model.model_dump(mode="json")` if the owner's code creates a Pydantic model.
+
+Request and response models must be Pydantic v2 models with `extra="forbid"`.
+They can inherit `backend.models.common.Record`, which also rejects non-finite
+numbers. Use `Number` for strict numeric fields and add only the owners' agreed
+validation ranges. No request schema is proposed by the backend.
+
+These are asynchronous adapters with a configurable deadline (30 seconds by
+default). They must not block the event loop or suppress cancellation. An adapter
+that calls an external API must use its own bounded connection/read timeouts and
+response size limits. CPU-heavy work belongs in the owner's worker/executor or
+precomputed pipeline. No provider credentials should appear in returned JSON.
+
+For missing inputs, an adapter can raise
+`backend.errors.unavailable("owner_data_missing", "...")`; the API returns a
+generic `component_unavailable` response. It deliberately hides the adapter's
+message. Malformed results are 502 and timeouts are 504. It never falls back to
+fabricated results or a different provider.
+
+## Chip: risk calculation
+
+Place the adapter in `backend/calculations/` or import it from your own module.
+The call is in `backend/api/risks.py`, `structured_risk()`.
+The backend first loads the area and calls `area_context()` to build:
+
+```text
+area: Area database record
+grid_cells: supplied grid records, including geometry
+environmental_data: latest whole environmental record per cell
+risk_scores: latest whole stored score record per cell
+weather, air_quality, satellite, population: projections of environmental_data
+```
+
+The projections preserve `grid_cell_id` and `timestamp`. There is no time-window
+alignment or aggregation by the backend. Reject incomplete or incompatible inputs
+in your adapter using your methodology. If a date/window contract changes, agree
+it with Abd before changing the database retrieval policy.
+
+Return `scores`, `exposure` and `metadata` as defined in `RiskResult`. The backend
+adds the area's real name and city from the database. You own score meanings,
+aggregation, normalization, exposure, units, thresholds and methodology. The
+illustrative formulas in the blueprint have not been implemented.
+The score contract now includes `population_exposure`, matching the existing
+`risk_scores.population_exposure_score` storage field and the frontend's sixth risk
+dimension. Supply it only when your calculation has produced it; otherwise use null.
+
+## Arjun + Chip: simulator
+
+The call is in `backend/api/simulator.py`, `simulate()`. It validates the request
+against your schema, loads `area_context()` and calls your adapter. The simulator
+receives the processed grid data and stored grid scores; it does not automatically
+call the area-risk function or apply any interventions itself.
+
+Provide the request schema and response schema plus a mapping to all eight
+`ScenarioValues` fields. The response model must have a `scenario` field using
+that model. Unsupported intervention/projection values are null, not zero defaults.
+At least one actual supplied projection is required.
+
+After output validation, Abd's code adds the scenario ID, area ID and creation time,
+inserts the scenario and returns `label: "modelled scenario"`. Assumptions and
+limitations may be included in your agreed response schema. They are returned in
+`result` and are not persisted by the current six-table schema.
+
+## Arjun: AI
+
+Place your adapter in `backend/ai/` or import your own module. The call is in
+`backend/api/ai.py`, `ai_analysis()`:
+
+1. Validate the POST against your request model.
+2. Retrieve a validated structured risk response through Chip's adapter.
+3. Pass the validated request and structured risk object to your AI adapter.
+4. Validate the returned object against your response model and serve it.
+
+The backend does not choose an LLM, prompt, question field, recommendation list or
+measurement. Arjun owns controlled prompting, output grounding and the AI contract;
+Abd will coordinate the chosen external provider connection when that decision and
+access details exist. No new LLM provider is introduced by the source clients.
+Structural validation is not evidence that AI statements are true. AI generation
+is not cached or persisted by this backend scope.
+
+## Infinity: supplied map layers
+
+Without an adapter, routes use database geometry and supplied environmental/risk
+values, as listed in the API contract. No grid, boundary or heatmap rendering is
+created here.
+
+If you already produce ready GeoJSON, register `Components.layers`. It receives
+the area ID and one of `heat`, `green`, `flood`. Return `MapLayer` as a plain object:
+`type`, `features`, optional `metadata`, optional `incomplete_grid_cell_ids`.
+Each feature has its supplied geometry and properties. Keep missing values null
+and include any units/source limitations in the agreed properties or metadata
+contract. This adapter can read Arjun's prepared files; Abd does not select files
+or invent their contents. It should report missing layers explicitly.
+
+## Phantom: where frontend calls belong
+
+Frontend interaction code stays with Phantom. The backend contains no frontend
+event handlers. Use these existing interactions to call the documented routes:
+
+| Interaction | API call |
+| --- | --- |
+| Load city choices | `GET /api/cities` |
+| Select a city | `GET /api/cities/{city_id}/areas` |
+| Select an area | Area detail, risk and population GETs |
+| Request a map layer | Corresponding heat/green/flood GET |
+| Submit an intervention | Simulator POST, once the owners agree its request schema |
+| Request AI analysis | AI-analysis POST, once Arjun agrees its request schema |
+
+Read `docs/backend-contract.md` before wiring responses. Treat null as missing,
+show unavailable states for 503, and show the modelled-scenario label. Do not turn
+an empty city list into a demonstration dataset. Share the owner-defined POST
+models before implementing their request payloads.
+
+### Mapping the uploaded frontend
+
+The frontend in this repository was reviewed at commit
+`a7c790c0965db4c90e4f1aa601a83023ebbe5430`. It is currently mock-driven and has no
+live fetch calls. Keep UI interaction changes in that repository with Phantom. The
+backend connection points for those existing screens are:
+
+| Frontend file | Replace mock access with |
+| --- | --- |
+| `app/explore/page.tsx` | cities, city areas, selected-area risk, and one of the three supported layer GETs |
+| `app/area/[id]/page.tsx` | area detail, risk, population, and supported layer GETs |
+| `app/simulate/[id]/page.tsx` | simulator POST after Arjun + Chip approve the request/response models |
+| `app/analysis/[id]/page.tsx` and `components/ai/AIChat.tsx` | AI-analysis POST after Arjun approves its models |
+
+The current frontend `Area` type combines records, calculated values, AI text and
+chart history. The backend does not claim that object as a database record. Phantom
+should create a frontend mapper that joins the documented responses and converts
+snake_case to camelCase. Missing fields stay unavailable; the mapper must not copy
+the values from `lib/mock-data.ts` as live data.
+
+The following uploaded demo logic must remain disconnected from Abd's backend until
+its owners replace or approve it:
+
+- `calculateSimulation()` contains mock coefficients and assumed ranges.
+- `AI_KNOWLEDGE_BASE` contains fixed claims, measurements and recommendations.
+- `HeroVisual.tsx` generates random risk values and mentions `/api/vitals`, which is
+  not one of the ten blueprint routes.
+- The UI has map controls beyond the supported heat, green and flood layer routes.
+- Historical trends, exposure distributions, confidence, density, area size and
+  satellite pass labels have no agreed backend transport yet.
+
+No frontend file was edited during Abd's compatibility update.

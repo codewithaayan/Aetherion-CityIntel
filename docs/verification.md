@@ -1,0 +1,68 @@
+# Verification record
+
+Checks run on 7-8 and 15 September 2026 with Python 3.12.13 on this Windows workspace:
+
+- `python -m pytest -q -p no:cacheprovider`: **145 passed, 1 skipped**.
+- `python -m pip check`: no broken requirements.
+- `python -m compileall -q backend tests`: passed.
+- The earlier Uvicorn smoke check on `127.0.0.1:8000` returned
+  200, `/openapi.json` contained exactly ten API paths, and a GET to `/api/cities`
+  plus a JSON POST to `/api/areas/test-area/simulate` both returned the expected
+  503 `database_not_configured` response.
+- The 15 September automated checks confirm OpenAPI still contains exactly those
+  ten paths. The population route now references `PopulationResponse`, and a
+  supplied zero-valued `population_exposure` score survives response validation.
+- Reviewed the downloaded team frontend at commit
+  `a7c790c0965db4c90e4f1aa601a83023ebbe5430`. Its Git working tree remained clean.
+  It has no live API calls; the only referenced call is a commented `/api/vitals`
+  placeholder outside the blueprint. No file in the team checkout was changed.
+
+The test suite covers route names, city/area lookups, empty datasets, missing
+records and measurements, supplied GeoJSON, preservation of null and zero, risk
+adapter validation, simulator input/output validation and persistence ordering,
+AI receiving structured risk, provider failures/timeouts, JSON/body limits, CORS,
+hosts, safe query parameters, cache expiry/capacity, and processed-record validation.
+The new checks cover outbound parameter encoding, raw response preservation,
+pipeline delivery, unknown sources/paths, no redirects/retries, deadlines, cooldowns,
+cache reuse and expiry, malformed/partial responses, gzip expansion limits and
+WorldPop's nonstandard `Content-Encoding: none` header.
+
+## Live external checks
+
+These were small, explicit public HTTP checks through the new source clients.
+No raster files were downloaded and no response was loaded into the project database.
+
+| Connection | Result |
+| --- | --- |
+| Open-Meteo Air Quality | Successful JSON request using the provider's documented Berlin example coordinates; times/units retained |
+| Overpass | Successful empty `out;` transport query; no city or OSM feature extraction performed |
+| USGS Landsat STAC | Successful single-page surface-temperature catalog request |
+| Copernicus Sentinel-2 STAC | Successful single-page L2A catalog request |
+| Earthdata CMR collections | Successful IMERG collection metadata request |
+| Earthdata CMR granules | Successful metadata request with version taken from the collection response; empty results remain empty |
+| WorldPop population catalog | Successful dataset alias listing at the verified hub URL |
+| WorldPop dataset metadata | Successful metadata request using the documentation's `wpgp`/`AUS` example |
+
+STAC/CMR smoke queries used a global bounding box, a fixed test interval and a
+one-result limit solely to check transport. These are not approved UrbanPulse
+dataset selections. No project coordinates, dates, scientific units or processing
+method were inferred from those checks. SRTM-specific file access, raster downloads,
+authenticated services and optional providers were not tested.
+
+The database engine test was **skipped** because `TEST_DATABASE_URL` was not set.
+PostgreSQL/PostGIS and Docker are not installed here. The schema, spatial SQL,
+transaction behaviour on an actual database and container build still need that
+environment. Query/import unit checks use connection doubles; they are not a live
+database integration claim.
+
+Automated test fixtures remain explicitly synthetic; the separate live checks above
+used real public source responses without seeding the application. No real teammate
+processing adapter or AI provider was available or tested. The frontend dependency
+directory was not included, so its TypeScript compiler was not run. Scientific
+validation remains with Ayesha and Chip.
+
+The installed Starlette test client emitted two upstream deprecation warnings
+about HTTPX and the AnyIO portal alias. They did not cause failures. The current
+test dependency versions are recorded in the requirements files.
+The cache plugin was disabled for this test command because the pre-existing local
+`.pytest_cache` directory is not writable by the current process.
