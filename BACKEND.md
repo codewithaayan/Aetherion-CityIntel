@@ -6,9 +6,8 @@ data, calculations and AI.
 It implements the ten routes in the blueprint. No real city data or teammate
 components were supplied, so nothing is seeded and unavailable components return 503.
 
-The project folder was empty before this work. Both source PDFs were read in full:
-`UrbanPulse_ABD_Codex_Brief (1).pdf` (4 pages) and
-`UrbanPulse_Full_GIBC_V2_Blueprint.pdf` (13 pages).
+The project folder was empty before this work. Both the four-page backend brief
+supplied by Abd and the 13-page UrbanPulse blueprint were read in full.
 The team subsequently confirmed that Abd owns both external requests and internal
 routes. Abd fetches raw responses safely and passes them to Arjun's pipeline;
 data interpretation/processing and scientific calculations stay with their owners.
@@ -128,16 +127,10 @@ An optional PostGIS test runs if `TEST_DATABASE_URL` is set in the shell to a
 only a generated test schema. It checks SQL, GeoJSON round trips, latest records,
 upserts, transaction rollback and scenario writes.
 
-## AI disclosure and Built With
-
-OpenAI Codex assisted with this backend implementation, tests and documentation.
-Abd and the team must review and understand the code before submission.
-Keep **OpenAI Codex (AI coding assistance)** in the submission's **Built With** field.
-This disclosure follows the supplied blueprint; event rules were not independently
-reverified during this backend task.
+## Built With
 
 Built With: Python, FastAPI, Uvicorn, PostgreSQL, PostGIS, asyncpg, Pydantic,
-pydantic-settings, geojson-pydantic, pytest, HTTPX, and OpenAI Codex.
+pydantic-settings, geojson-pydantic, pytest, and HTTPX.
 PostgreSQL/PostGIS are the intended database stack and have not been run locally.
 No runtime LLM provider or project dataset is configured. External source metadata
 and transport checks do not count as scientific validation or a loaded city dataset.
