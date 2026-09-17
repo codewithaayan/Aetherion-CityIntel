@@ -611,7 +611,7 @@ export const TEAM_MEMBERS = [
     role: "Product + Frontend",
     description: "Architects the product experience, component boundaries, visual telemetry, and reactive UI states.",
     gradient: "from-cyan-500 to-blue-600",
-    initials: "PH",
+    initials: "MA",
     specialty: "Next.js, UX Architecture, Telemetry Systems",
   },
   {
@@ -627,7 +627,7 @@ export const TEAM_MEMBERS = [
     role: "GIS + Visualization",
     description: "Engineers spatial data rasterization, WebGL shader layers, GeoJSON rendering, and interactive cartography.",
     gradient: "from-purple-500 to-indigo-600",
-    initials: "IN",
+    initials: "BY",
     specialty: "GIS Pipelines, Mapbox/MapLibre, Vector Shaders",
   },
   {
@@ -643,7 +643,7 @@ export const TEAM_MEMBERS = [
     role: "Data + AI",
     description: "Orchestrates multi-satellite ingestion pipelines, spatial feature embeddings, and LLM diagnostic synthesis.",
     gradient: "from-amber-500 to-orange-600",
-    initials: "AR",
+    initials: "HE",
     specialty: "Satellite Pipelines, Spatial AI, ML Inference",
   },
   {
