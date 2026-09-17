@@ -17,7 +17,9 @@ The blueprint's frontend and illustrative formulas have not been implemented her
 
 Direct raw-data clients are implemented for Open-Meteo Air Quality and Overpass.
 Public catalog clients are implemented for Landsat, Sentinel-2, Earthdata
-IMERG/SRTM and WorldPop. Catalog metadata is not a measurement or processed raster.
+IMERG/SRTM, WorldPop and the two approved Karachi EO4SD-Urban datasets. The Karachi
+adapter can also stream the six published ZIP resources to local storage for
+Arjun's pipeline. Catalog metadata is not a measurement or processed raster.
 
 [Source inspection and connection documentation](docs/source-connections.md)
 lists every blueprint source, the verified APIs, implemented calls and remaining

@@ -7,7 +7,8 @@ perform transport and JSON checks only. No raster processing, normalization,
 feature engineering, population aggregation or environmental calculations are added.
 
 The source list below comes from blueprint pages 3-4. Official documentation and
-public endpoints were inspected on 7-8 September 2026. A successful catalog request
+public endpoints were inspected on 7-8 September 2026. The two later team-approved
+Karachi sources were inspected on 17 September 2026. A successful catalog request
 does not establish that a chosen city's data is available or scientifically suitable.
 
 ## Source inspection
@@ -26,6 +27,25 @@ does not establish that a chosen city's data is available or scientifically suit
 | ERA5 (optional) | CDS API retrieves selected files, using an account/token and accepted dataset terms | Documented connection point only | Team selection of variables, product, dates and file format; credentials and accepted terms |
 | Local government datasets (optional) | No city, dataset, portal or URL identified by the blueprint | Documented connection point only | The actual source and access contract; no URL guessed |
 | TomTom / HERE (optional) | Traffic APIs require registered application credentials | Documented connection points only; no traffic dependency | Team decision to use them, product/access terms and credentials |
+
+### Team-approved Karachi additions
+
+These are later additions to the source list, limited to the two URLs supplied by
+the team. They are public, CC BY 4.0 static geospatial datasets hosted by the World
+Bank catalog. No account or credential was required during inspection.
+
+| Dataset | Reliable access found | Implemented here | Still needed |
+| --- | --- | --- | --- |
+| Karachi Land Use/Land Cover (ESA EO4SD-Urban) | EnergyData CKAN metadata API; four live ZIP downloads for 2005/2017 core and peri-urban products | Cached raw catalog response; bounded streaming of only those four fixed ZIPs; local ZIP loader | Arjun's choice of product/year and archive handling; interpretation of classes, geometry/CRS checks and any derived values |
+| Karachi Informal Settlements (ESA EO4SD-Urban) | EnergyData CKAN metadata API; two live SHP ZIP downloads for 2005/2017 | Cached raw catalog response; bounded streaming of only those two fixed ZIPs; local ZIP loader | Arjun's choice of year and archive handling; feature interpretation, alignment and any vulnerability use |
+
+The catalog also advertises ArcGIS FeatureServer resources, but the listed
+`geowb.worldbank.org` host did not resolve during verification. Its generated
+GeoJSON alternate links returned 404. Those unstable paths are documented but are
+not connected. The six original ZIP download URLs returned HTTP 200 and are treated
+as the reliable raw-file interface. The adapter checks only that a response is a
+nonempty ZIP container; it does not extract files or claim their contents are ready
+for analysis.
 
 Sources for the access methods:
 
@@ -57,6 +77,11 @@ Sources for the access methods:
   [TomTom Traffic access](https://developer.tomtom.com/traffic-api/documentation/product-information/introduction),
   and [HERE Traffic access](https://docs.here.com/traffic-api/docs/send-request-readme).
   No accounts, credentials, services or requests to those optional APIs were created.
+- [Karachi Land Use/Land Cover on EnergyData](https://energydata.info/dataset/karachi-pakistan-land-use-land-cover-esa-eo4sd-urban)
+  and [Karachi Informal Settlements on EnergyData](https://energydata.info/dataset/karachi-pakistan-informal-settlements-esa-eo4sd-urban).
+  Catalog metadata is read through EnergyData's public CKAN `package_show` action.
+  Source metadata and attribution are retained for Arjun; scientific suitability is
+  not inferred from the catalog labels.
 
 ## Implemented internal Python calls
 
@@ -74,6 +99,9 @@ Selection models live in `backend/services/source_requests.py`.
 | `earthdata.fetch_earthdata_granules(http, selection)` | `EarthdataGranuleSearch`: short name, version, bbox, dates, page number/limit | `GET https://cmr.earthdata.nasa.gov/search/granules.json` |
 | `population.fetch_worldpop_datasets(http)` | None; lists available population aliases | `GET https://hub.worldpop.org/rest/data/pop` |
 | `population.fetch_worldpop_catalog(http, selection)` | `WorldPopSearch`: dataset alias, optional ISO3 country | `GET https://hub.worldpop.org/rest/data/pop/{dataset}` |
+| `karachi.fetch_karachi_catalog(http, selection)` | `KarachiCatalogRequest`: one of the two approved datasets | `GET https://energydata.info/api/3/action/package_show` with the fixed dataset ID |
+| `karachi.download_karachi_file(http, selection, directory)` | `KarachiFileRequest`: one of six fixed resources; caller-supplied storage directory | Streams the corresponding `datacatalogfiles.worldbank.org` ZIP to its published filename |
+| `karachi.load_karachi_file(selection, path, max_bytes=...)` | Matching published local filename and explicit byte limit | No HTTP call; validates the local ZIP container and returns its path |
 
 Air variable names are the provider's names for the explicitly listed pollutants:
 `pm10`, `pm2_5`, `carbon_monoxide`, `carbon_dioxide`, `nitrogen_dioxide`,
@@ -102,7 +130,7 @@ there is no automatic paging or download fan-out.
 
 ## What Arjun receives
 
-Every successful function returns `RawResponse` from `backend/services/external.py`:
+Every successful JSON function returns `RawResponse` from `backend/services/external.py`:
 
 | Field | Meaning |
 | --- | --- |
@@ -121,6 +149,12 @@ they are not converted into zero population or zero risk. Structural checks catc
 malformed/incomplete JSON, not scientific problems. Raw responses are neither
 mapped to `environmental_data` nor forwarded directly to dashboard routes.
 
+Karachi file download/load calls return `RawFile` instead. It contains the fixed
+source and published endpoint, local `path`, byte length, observation time, selected
+HTTP provenance headers, and `origin` (`download` or `local`). The ZIP bytes remain
+on disk unchanged. `fetch_for_pipeline()` accepts either raw type and passes it to
+Arjun's supplied receiver.
+
 ## Request safeguards
 
 - Fixed verified HTTPS destinations, certificate verification, no caller-supplied
@@ -132,6 +166,11 @@ mapped to `environmental_data` nor forwarded directly to dashboard routes.
 - Default 2 MiB limits on both received and decoded bodies. Identity and bounded
   gzip decoding are supported. WorldPop's observed `Content-Encoding: none` is
   treated as plain JSON only for that source. Other encodings fail explicitly.
+- Static Karachi ZIPs are streamed to a temporary file beside the destination and
+  atomically moved into place after validation. They have a separate 32 MiB default
+  limit, are never held in the JSON cache, and never overwrite an existing file.
+  A failed or partial transfer removes its temporary file. Reuse is explicit through
+  `load_karachi_file`, which enforces the published filename and configured limit.
 - Successful complete responses are cached for 15 minutes, at most 32 entries per
   instance. The request parameters are part of the key. `from_cache` is explicit;
   `fetched_at` stays at the original fetch time. Empty but valid upstream results
@@ -166,6 +205,11 @@ storage destination. Do not construct guessed tile URLs, add provider credential
 to source control, or silently swap sources. `weather.py` keeps IMERG/ERA5 file
 access documented as pending; `satellite.py` is the satellite/DEM download boundary;
 `population.py` is the WorldPop raster boundary.
+
+The two requested Kaggle weather/air-quality datasets were not added because they
+overlap the already connected sources. MapTiler was not added because the team is
+using Landsat and Sentinel-2 for satellite access. No endpoint or dependency for
+those excluded suggestions appears in the backend.
 
 The existing processed-record importer and ten HTTP routes remain unchanged.
 See [the teammate handoff](teammate-handoff.md) for the raw receiver call site.

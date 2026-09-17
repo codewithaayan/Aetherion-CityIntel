@@ -78,3 +78,14 @@ class EarthdataGranuleSearch(SpatialSearch):
 class WorldPopSearch(Record):
     dataset: str = Field(pattern=r"^[A-Za-z][A-Za-z0-9_]*$", max_length=80)
     iso3: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+
+
+class KarachiCatalogRequest(Record):
+    dataset: Literal["land_use_land_cover", "informal_settlements"]
+
+
+class KarachiFileRequest(Record):
+    resource: Literal[
+        "lulc_peri_2005", "lulc_peri_2017", "lulc_core_2005", "lulc_core_2017",
+        "informal_2005", "informal_2017",
+    ]

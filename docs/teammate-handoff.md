@@ -13,9 +13,11 @@ verified access method, implemented functions, credentials/files still needed,
 and the raw response contract. The outbound clients do not run at startup or when
 Phantom requests a dashboard. The data pipeline invokes them with agreed selections.
 
-The exact request call is `SourceHTTP._send()` in `backend/services/external.py`.
+The exact JSON and file request calls are `SourceHTTP._send()` and
+`SourceHTTP._download()` in `backend/services/external.py`.
 Source-specific request functions live in `air_quality.py`, `osm.py`,
-`satellite.py`, `earthdata.py` and `population.py`. They return `RawResponse`.
+`satellite.py`, `earthdata.py`, `population.py` and `karachi.py`. JSON requests
+return `RawResponse`; the Karachi ZIP connection returns `RawFile`.
 `fetch_for_pipeline()` is the connection point that calls Arjun's raw receiver:
 
 ```python
@@ -44,6 +46,39 @@ from `data`, and treat `fetched_at` as retrieval time, not a measurement timesta
 If the receiver is `None`, `fetch_for_pipeline` raises `data_pipeline_not_configured`
 before making a request. Failed fetches never reach the receiver. Receiver exceptions
 propagate to the caller; the helper never claims ingestion succeeded or retries it.
+
+For the two approved Karachi datasets, first choose one of the exact published
+resources with Arjun. The backend does not select a year or core/peri-urban product:
+
+```python
+from backend.config.settings import Settings
+from backend.services.external import SourceHTTP, fetch_for_pipeline
+from backend.services.karachi import download_karachi_file
+from backend.services.source_requests import KarachiFileRequest
+
+async def collect_karachi_file(download_directory, arjun_receive_raw):
+    selection = KarachiFileRequest(resource="informal_2017")  # Arjun supplies this
+    async with SourceHTTP(Settings()) as http:
+        return await fetch_for_pipeline(
+            lambda: download_karachi_file(http, selection, download_directory),
+            arjun_receive_raw,
+        )
+```
+
+Valid resource names are `lulc_peri_2005`, `lulc_peri_2017`, `lulc_core_2005`,
+`lulc_core_2017`, `informal_2005` and `informal_2017`. The directory is also supplied
+by the pipeline. The function creates the published filename, refuses to overwrite
+it, and returns a `RawFile` path. To use a separately downloaded copy, call
+`load_karachi_file(selection, path, max_bytes=settings.external_max_file_bytes)`;
+the filename must match the selected published resource.
+
+Catalog discovery is separate: `fetch_karachi_catalog(http, selection)` accepts
+`land_use_land_cover` or `informal_settlements` and returns untouched EnergyData
+metadata through the normal 15-minute JSON cache. The advertised FeatureServer and
+generated GeoJSON alternatives were unavailable during verification, so use the ZIP
+resources unless the team re-verifies and explicitly approves another access path.
+Arjun owns archive extraction, CRS/geometry review, class interpretation, alignment
+with project grids and all downstream calculations.
 
 Only after Arjun produces validated processed records should the existing importer
 below be used. Abd does not map air variables into database fields, derive geometry

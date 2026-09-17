@@ -1,8 +1,8 @@
 # Verification record
 
-Checks run on 7-8 and 15 September 2026 with Python 3.12.13 on this Windows workspace:
+Checks run on 7-8, 15 and 17 September 2026 with Python 3.12.13 on this Windows workspace:
 
-- `python -m pytest -q -p no:cacheprovider`: **145 passed, 1 skipped**.
+- `python -m pytest -q -p no:cacheprovider`: **157 passed, 1 skipped**.
 - `python -m pip check`: no broken requirements.
 - `python -m compileall -q backend tests`: passed.
 - The earlier Uvicorn smoke check on `127.0.0.1:8000` returned
@@ -25,12 +25,15 @@ hosts, safe query parameters, cache expiry/capacity, and processed-record valida
 The new checks cover outbound parameter encoding, raw response preservation,
 pipeline delivery, unknown sources/paths, no redirects/retries, deadlines, cooldowns,
 cache reuse and expiry, malformed/partial responses, gzip expansion limits and
-WorldPop's nonstandard `Content-Encoding: none` header.
+WorldPop's nonstandard `Content-Encoding: none` header. Karachi-specific checks cover
+the fixed dataset/resource selections, cached CKAN metadata, bounded atomic ZIP
+downloads, overwrite refusal, partial-file cleanup and explicit local ZIP loading.
 
 ## Live external checks
 
-These were small, explicit public HTTP checks through the new source clients.
-No raster files were downloaded and no response was loaded into the project database.
+These were small, explicit public HTTP checks through the source clients. No response
+was loaded into the project database. The single Karachi ZIP check used a temporary
+directory that was removed automatically after validation.
 
 | Connection | Result |
 | --- | --- |
@@ -42,6 +45,8 @@ No raster files were downloaded and no response was loaded into the project data
 | Earthdata CMR granules | Successful metadata request with version taken from the collection response; empty results remain empty |
 | WorldPop population catalog | Successful dataset alias listing at the verified hub URL |
 | WorldPop dataset metadata | Successful metadata request using the documentation's `wpgp`/`AUS` example |
+| EnergyData Karachi catalog | Successful CKAN metadata request for the approved informal-settlements dataset; five resource records preserved |
+| Karachi static file | Successfully streamed and validated the published 2005 informal-settlements ZIP (183,526 bytes) without extraction or processing |
 
 STAC/CMR smoke queries used a global bounding box, a fixed test interval and a
 one-result limit solely to check transport. These are not approved UrbanPulse

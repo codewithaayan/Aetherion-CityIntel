@@ -3,12 +3,15 @@
 import asyncio
 import json
 import math
+import os
+import tempfile
 import zlib
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from time import monotonic
 
 import httpx
@@ -27,6 +30,16 @@ ENDPOINTS = {
     "earthdata_collections": "https://cmr.earthdata.nasa.gov/search/collections.json",
     "earthdata_granules": "https://cmr.earthdata.nasa.gov/search/granules.json",
     "worldpop_catalog": "https://hub.worldpop.org/rest/data/pop",
+    "karachi_eo4sd_catalog": "https://energydata.info/api/3/action/package_show",
+}
+
+FILE_ENDPOINTS = {
+    "karachi_lulc_peri_2005": "https://datacatalogfiles.worldbank.org/ddh-published/0041102/DR0051283/eo4sd_karachi_lulchr_2005.zip",
+    "karachi_lulc_peri_2017": "https://datacatalogfiles.worldbank.org/ddh-published/0041102/DR0051284/eo4sd_karachi_lulchr_2017.zip",
+    "karachi_lulc_core_2005": "https://datacatalogfiles.worldbank.org/ddh-published/0041102/DR0051285/eo4sd_karachi_lulcvhr_2005.zip",
+    "karachi_lulc_core_2017": "https://datacatalogfiles.worldbank.org/ddh-published/0041102/DR0051286/eo4sd_karachi_lulcvhr_2017.zip",
+    "karachi_informal_2005": "https://datacatalogfiles.worldbank.org/ddh-published/0039832/1/DR0049550/eo4sd_karachi_informal_2005.zip",
+    "karachi_informal_2017": "https://datacatalogfiles.worldbank.org/ddh-published/0039832/1/DR0049551/eo4sd_karachi_informal_2017.zip",
 }
 
 
@@ -41,6 +54,18 @@ class RawResponse:
     payload: dict
     headers: dict[str, str]
     from_cache: bool = False
+
+
+@dataclass(frozen=True)
+class RawFile:
+    source: str
+    kind: str
+    endpoint: str
+    path: Path
+    byte_length: int
+    observed_at: datetime
+    headers: dict[str, str]
+    origin: str  # "download" or "local"
 
 
 class SourceError(APIError):
@@ -134,20 +159,41 @@ class SourceHTTP:
         except httpx.RequestError:
             raise SourceError(502, "source_connection_failed", source, "The external request failed.") from None
 
+    async def download(self, source, destination, *, validate):
+        """Stream one fixed public file to a new local path without processing it."""
+        if source not in FILE_ENDPOINTS:
+            raise ValueError("This source is not an implemented file connection.")
+        destination = Path(destination)
+        if destination.exists():
+            raise FileExistsError(f"Refusing to overwrite existing file: {destination}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        url = FILE_ENDPOINTS[source]
+        origin = httpx.URL(url).host
+
+        async def load():
+            remaining = self.cooldown[origin] - monotonic()
+            if remaining > 0:
+                raise SourceError(503, "source_rate_limited", source,
+                                  "Wait before requesting this source again.", math.ceil(remaining))
+            await asyncio.sleep(max(0, self.next_request[origin] - monotonic()))
+            self.next_request[origin] = monotonic() + self.settings.external_min_interval_seconds
+            return await self._download(source, url, destination, validate)
+
+        try:
+            async with asyncio.timeout(self.settings.external_timeout_seconds):
+                async with self.locks[origin]:
+                    if destination.exists():
+                        raise FileExistsError(f"Refusing to overwrite existing file: {destination}")
+                    return await load()
+        except (TimeoutError, httpx.TimeoutException):
+            raise SourceError(504, "source_timeout", source, "The external request exceeded its deadline.") from None
+        except httpx.RequestError:
+            raise SourceError(502, "source_connection_failed", source, "The external request failed.") from None
+
     async def _send(self, source, kind, url, arguments, params, form):
         async with self.client.stream("POST" if form is not None else "GET", url,
                                       params=params, data=form) as response:
-            if response.status_code in (429, 503):
-                delay = retry_delay(response.headers.get("retry-after"))
-                self.cooldown[httpx.URL(url).host] = monotonic() + delay
-                raise SourceError(503, "source_rate_limited", source,
-                                  "The source is busy or rate limited.", delay)
-            if response.status_code in (401, 403):
-                raise SourceError(503, "source_access_unavailable", source,
-                                  "The source denied access; its access requirements need review.")
-            if response.status_code != 200:
-                raise SourceError(502, "source_http_error", source,
-                                  f"The source returned HTTP {response.status_code}.")
+            self._check_status(response, source, url)
             content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
             if content_type != "application/json" and not content_type.endswith("+json"):
                 raise SourceError(502, "invalid_source_response", source, "Expected JSON from the source.")
@@ -170,6 +216,79 @@ class SourceHTTP:
             ) if key in response.headers}
             return RawResponse(source, kind, url, arguments, datetime.now(timezone.utc),
                                bytes(body), payload, headers)
+
+    async def _download(self, source, url, destination, validate):
+        temporary_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=destination.parent, prefix=f".{destination.name}.",
+                suffix=".part", delete=False,
+            ) as output:
+                temporary_path = Path(output.name)
+                async with self.client.stream(
+                    "GET", url,
+                    headers={"Accept": "application/zip, application/octet-stream"},
+                ) as response:
+                    self._check_status(response, source, url)
+                    content_type = response.headers.get("content-type", "").split(";", 1)[0].lower()
+                    if content_type not in (
+                        "application/zip", "application/x-zip-compressed", "application/octet-stream",
+                    ):
+                        raise SourceError(502, "invalid_source_response", source,
+                                          "Expected a ZIP file from the source.")
+                    if response.headers.get("content-encoding", "identity").lower() != "identity":
+                        raise SourceError(502, "invalid_source_response", source,
+                                          "Compressed HTTP encoding is unsupported for file downloads.")
+                    limit = self.settings.external_max_file_bytes
+                    length = response.headers.get("content-length")
+                    if length and length.isdigit() and int(length) > limit:
+                        raise SourceError(502, "source_response_too_large", source,
+                                          "The file exceeds the byte limit.")
+                    byte_length = 0
+                    async for chunk in response.aiter_raw(chunk_size=65536):
+                        byte_length += len(chunk)
+                        if byte_length > limit:
+                            raise SourceError(502, "source_response_too_large", source,
+                                              "The file exceeds the byte limit.")
+                        output.write(chunk)
+
+                    if byte_length == 0:
+                        raise SourceError(502, "invalid_source_response", source,
+                                          "The source returned an empty file.")
+                    headers = {key: response.headers[key] for key in (
+                        "content-type", "content-length", "date", "etag", "last-modified",
+                    ) if key in response.headers}
+
+            try:
+                validate(temporary_path)
+            except (OSError, ValueError):
+                raise SourceError(502, "invalid_source_response", source,
+                                  "The source did not return a valid ZIP file.") from None
+            if destination.exists():
+                raise FileExistsError(f"Refusing to overwrite existing file: {destination}")
+            os.replace(temporary_path, destination)
+            temporary_path = None
+            return RawFile(source, "file", url, destination, byte_length,
+                           datetime.now(timezone.utc), headers, "download")
+        finally:
+            if temporary_path is not None:
+                try:
+                    temporary_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+
+    def _check_status(self, response, source, url):
+        if response.status_code in (429, 503):
+            delay = retry_delay(response.headers.get("retry-after"))
+            self.cooldown[httpx.URL(url).host] = monotonic() + delay
+            raise SourceError(503, "source_rate_limited", source,
+                              "The source is busy or rate limited.", delay)
+        if response.status_code in (401, 403):
+            raise SourceError(503, "source_access_unavailable", source,
+                              "The source denied access; its access requirements need review.")
+        if response.status_code != 200:
+            raise SourceError(502, "source_http_error", source,
+                              f"The source returned HTTP {response.status_code}.")
 
     async def _read_body(self, response, source, limit):
         encoding = response.headers.get("content-encoding", "identity").lower()
@@ -200,8 +319,8 @@ class SourceHTTP:
 
 
 async def fetch_for_pipeline(
-    fetch: Callable[[], Awaitable[RawResponse]],
-    receive: Callable[[RawResponse], Awaitable[None]] | None,
+    fetch: Callable[[], Awaitable[RawResponse | RawFile]],
+    receive: Callable[[RawResponse | RawFile], Awaitable[None]] | None,
 ):
     """Fetch one raw response and hand it to Arjun's supplied pipeline callback."""
     if receive is None:

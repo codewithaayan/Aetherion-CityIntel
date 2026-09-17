@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     team_components_factory: str = ""
     external_timeout_seconds: float = Field(default=30, gt=0, le=120)
     external_max_response_bytes: int = Field(default=2097152, ge=1024, le=16777216)
+    external_max_file_bytes: int = Field(default=33554432, ge=1048576, le=536870912)
     external_cache_ttl_seconds: float = Field(default=900, ge=0, le=86400)
     external_cache_max_entries: int = Field(default=32, ge=1, le=128)
     external_min_interval_seconds: float = Field(default=1, ge=0.1, le=60)
