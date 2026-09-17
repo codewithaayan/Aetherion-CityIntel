@@ -47,6 +47,18 @@ as the reliable raw-file interface. The adapter checks only that a response is a
 nonempty ZIP container; it does not extract files or claim their contents are ready
 for analysis.
 
+### Current Karachi raw staging
+
+The agreed current choice is the 2017 resources. On 17 September 2026, Abd staged
+the raw ZIPs locally under ignored `data/raw/karachi/`; they are intentionally not
+committed to Git. The 2017 peri-urban LULC and informal-settlement archives contain
+matching `2017` shapefile names. Both declare WGS 1984 / UTM Zone 42N in their
+included `.prj` files. The file served by the catalog's **2017 core LULC** URL
+contains shapefile parts named `EO4SD_KARACHI_LULCVHR_2005`. It is retained as raw
+source evidence but is **not approved as 2017 core data** until Arjun/the team
+verifies the mismatch with the source owner. No extraction, reprojection or feature
+processing has occurred.
+
 Sources for the access methods:
 
 - [USGS STAC](https://www.usgs.gov/landsat-missions/spatiotemporal-asset-catalog-stac)

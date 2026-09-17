@@ -80,6 +80,12 @@ resources unless the team re-verifies and explicitly approves another access pat
 Arjun owns archive extraction, CRS/geometry review, class interpretation, alignment
 with project grids and all downstream calculations.
 
+The current raw selection is `lulc_peri_2017` and `informal_2017`; both files are
+staged locally in `data/raw/karachi/` and declare WGS 1984 / UTM Zone 42N. The
+published `lulc_core_2017` download is also staged, but its internal shapefile names
+say `2005`. Do not process it as confirmed 2017 core data until the team verifies
+that source mismatch.
+
 Only after Arjun produces validated processed records should the existing importer
 below be used. Abd does not map air variables into database fields, derive geometry
 from OSM, calculate temperatures/NDVI, sum population, or fill missing measurements.

@@ -16,6 +16,9 @@
 __pycache__/
 *.py[cod]
 
+# Downloaded source files stay local; only their retrieval code is committed.
+/data/raw/
+
 # next.js
 /.next/
 /out/

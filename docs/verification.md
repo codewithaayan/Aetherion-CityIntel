@@ -47,12 +47,19 @@ directory that was removed automatically after validation.
 | WorldPop dataset metadata | Successful metadata request using the documentation's `wpgp`/`AUS` example |
 | EnergyData Karachi catalog | Successful CKAN metadata request for the approved informal-settlements dataset; five resource records preserved |
 | Karachi static file | Successfully streamed and validated the published 2005 informal-settlements ZIP (183,526 bytes) without extraction or processing |
+| Karachi 2017 staging | Downloaded the published 2017 core LULC (4,091,645 bytes), peri-urban LULC (7,757,519 bytes) and informal-settlements (203,663 bytes) ZIPs to ignored local storage; only archive member names and `.prj` declarations were inspected |
 
 STAC/CMR smoke queries used a global bounding box, a fixed test interval and a
 one-result limit solely to check transport. These are not approved UrbanPulse
 dataset selections. No project coordinates, dates, scientific units or processing
 method were inferred from those checks. SRTM-specific file access, raster downloads,
 authenticated services and optional providers were not tested.
+
+The 2017 peri-urban LULC and informal-settlement archives contain matching 2017
+shapefile names and declare WGS 1984 / UTM Zone 42N. The published 2017 core LULC
+ZIP instead contains components named `EO4SD_KARACHI_LULCVHR_2005`; it is not treated
+as confirmed 2017 data. This is a source-package discrepancy, not a conversion or
+processing result.
 
 The database engine test was **skipped** because `TEST_DATABASE_URL` was not set.
 PostgreSQL/PostGIS and Docker are not installed here. The schema, spatial SQL,
