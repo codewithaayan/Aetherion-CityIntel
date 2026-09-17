@@ -607,7 +607,7 @@ export const DATA_SOURCES = [
 // Team Aetherion
 export const TEAM_MEMBERS = [
   {
-    name: "Phantom",
+    name: "Muhammad Aayan",
     role: "Product + Frontend",
     description: "Architects the product experience, component boundaries, visual telemetry, and reactive UI states.",
     gradient: "from-cyan-500 to-blue-600",
@@ -623,7 +623,7 @@ export const TEAM_MEMBERS = [
     specialty: "Microclimate Modeling, Physics Engines, Thermal Dynamics",
   },
   {
-    name: "Infinity",
+    name: "Benjamin You",
     role: "GIS + Visualization",
     description: "Engineers spatial data rasterization, WebGL shader layers, GeoJSON rendering, and interactive cartography.",
     gradient: "from-purple-500 to-indigo-600",
@@ -639,7 +639,7 @@ export const TEAM_MEMBERS = [
     specialty: "High-Throughput APIs, Geospatial DBs, Cloud Architecture",
   },
   {
-    name: "Arjun",
+    name: "Henri",
     role: "Data + AI",
     description: "Orchestrates multi-satellite ingestion pipelines, spatial feature embeddings, and LLM diagnostic synthesis.",
     gradient: "from-amber-500 to-orange-600",
