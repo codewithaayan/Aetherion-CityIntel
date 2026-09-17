@@ -643,7 +643,7 @@ export const TEAM_MEMBERS = [
     role: "Data + AI",
     description: "Orchestrates multi-satellite ingestion pipelines, spatial feature embeddings, and LLM diagnostic synthesis.",
     gradient: "from-amber-500 to-orange-600",
-    initials: "HE",
+    initials: "HN",
     specialty: "Satellite Pipelines, Spatial AI, ML Inference",
   },
   {
