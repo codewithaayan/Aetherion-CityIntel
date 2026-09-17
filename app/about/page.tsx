@@ -13,11 +13,11 @@ export const metadata = {
 
 export default function AboutPage() {
   const teamPipeline = [
-    { role: "DATA PIPELINE", owner: "ARJUN", desc: "Multi-satellite ingestion, cloud filtering & feature extraction", icon: Database },
+    { role: "DATA PIPELINE", owner: "HENRI", desc: "Multi-satellite ingestion, cloud filtering & feature extraction", icon: Database },
     { role: "ENVIRONMENTAL MODEL", owner: "CHIP", desc: "Thermodynamic equations, UHI metrics & microclimate transfers", icon: Cpu },
     { role: "BACKEND API", owner: "ABD", desc: "High-throughput geospatial routing, Redis caching & database APIs", icon: Layers },
-    { role: "FRONTEND", owner: "PHANTOM", desc: "Component boundaries, reactive simulation states & telemetry UI", icon: Sparkles },
-    { role: "GIS VISUALIZATION", owner: "INFINITY", desc: "WebGL rasterization, vector layers & dynamic cartography", icon: Globe },
+    { role: "FRONTEND", owner: "MUHAMMAD AAYAN", desc: "Component boundaries, reactive simulation states & telemetry UI", icon: Sparkles },
+    { role: "GIS VISUALIZATION", owner: "BENJAMIN YOU", desc: "WebGL rasterization, vector layers & dynamic cartography", icon: Globe },
   ];
 
   return (
