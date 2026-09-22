@@ -1,172 +1,68 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
+import { useEffect, useMemo, useState } from "react";
+import { MapPin, Search } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
-import { MapPlaceholder } from "@/components/map/MapPlaceholder";
-import { LayerControls } from "@/components/map/LayerControls";
-import { RiskLegend } from "@/components/map/RiskLegend";
+import { Navbar } from "@/components/layout/Navbar";
 import { AreaPopup } from "@/components/map/AreaPopup";
-import { MOCK_AREAS } from "@/lib/mock-data";
-import { Area } from "@/types/area";
-import { Search, MapPin, ChevronDown, ArrowRight, ShieldCheck, Filter } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
-import { formatNumber, getRiskLevel } from "@/lib/utils";
+import { LayerControls } from "@/components/map/LayerControls";
+import { MapPlaceholder } from "@/components/map/MapPlaceholder";
+import { RiskLegend } from "@/components/map/RiskLegend";
+import { DataNotice } from "@/components/ui/DataNotice";
+import { errorMessage, getAreas, getCities, getLayer, getRisk } from "@/lib/api";
+import type { Area, City } from "@/types/area";
+import type { LayerName, MapLayer, RiskResponse } from "@/types/risk";
 
 export default function ExplorePage() {
-  const [activeLayer, setActiveLayer] = useState("overall");
-  const [selectedCity, setSelectedCity] = useState("Karachi, Pakistan");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedArea, setSelectedArea] = useState<Area>(MOCK_AREAS[0]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [cityId, setCityId] = useState("");
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [areaId, setAreaId] = useState("");
+  const [risk, setRisk] = useState<RiskResponse | null>(null);
+  const [layer, setLayer] = useState<MapLayer | null>(null);
+  const [activeLayer, setActiveLayer] = useState<LayerName>("heat");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [layerLoading, setLayerLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [layerError, setLayerError] = useState<string | null>(null);
 
-  // Filter areas based on user query
-  const filteredAreas = MOCK_AREAS.filter((area) =>
-    area.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    let active = true;
+    getCities().then((items) => { if (!active) return; setCities(items); setCityId(items[0]?.id ?? ""); if (items.length === 0) setLoading(false); }).catch((reason) => { if (!active) return; setError(errorMessage(reason)); setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  return (
-    <div className="min-h-screen flex flex-col bg-[#030712] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      <Navbar />
+  useEffect(() => {
+    if (!cityId) return;
+    let active = true;
+    getAreas(cityId).then((items) => { if (!active) return; setAreas(items); setAreaId(items[0]?.id ?? ""); setLoading(false); }).catch((reason) => { if (!active) return; setError(errorMessage(reason)); setLoading(false); });
+    return () => { active = false; };
+  }, [cityId]);
 
-      <main className="flex-1 pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-6">
-        {/* Top Header Bar */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold tracking-widest text-cyan-400 uppercase">
-                SPATIAL EXPLORER
-              </span>
-              <Badge variant="cyan" size="sm">
-                AETHERION GIS READY
-              </Badge>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-1">
-              Explore Your City
-            </h1>
-          </div>
+  useEffect(() => {
+    if (!areaId) return;
+    let active = true;
+    Promise.allSettled([getRisk(areaId), getLayer(areaId, activeLayer)]).then(([riskResult, layerResult]) => {
+      if (!active) return;
+      if (riskResult.status === "fulfilled") setRisk(riskResult.value);
+      if (layerResult.status === "fulfilled") setLayer(layerResult.value); else setLayerError(errorMessage(layerResult.reason));
+      setLayerLoading(false);
+    });
+    return () => { active = false; };
+  }, [areaId, activeLayer]);
 
-          {/* City Selector Dropdown */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 border border-cyan-500/30 text-xs font-mono text-cyan-300 shadow-md">
-                <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="font-semibold">{selectedCity}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              </div>
-            </div>
-            <span className="text-xs font-mono text-slate-500 hidden sm:inline">
-              5 Primary Zones Mapped
-            </span>
-          </div>
-        </div>
+  const selectedCity = cities.find((city) => city.id === cityId);
+  const selectedArea = areas.find((area) => area.id === areaId);
+  const filteredAreas = useMemo(() => areas.filter((area) => area.name.toLowerCase().includes(search.toLowerCase())), [areas, search]);
+  const selectCity = (nextCityId: string) => { setCityId(nextCityId); setAreas([]); setAreaId(""); setRisk(null); setLayer(null); setError(null); setLoading(Boolean(nextCityId)); };
+  const selectArea = (nextAreaId: string) => { setAreaId(nextAreaId); setRisk(null); setLayer(null); setLayerError(null); setLayerLoading(Boolean(nextAreaId)); };
+  const selectLayer = (nextLayer: LayerName) => { setActiveLayer(nextLayer); setLayer(null); setLayerError(null); setLayerLoading(Boolean(areaId)); };
 
-        {/* 2-Column Split: Left Sidebar + Right Map Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Sidebar: Search, Neighbourhoods, Environmental Layers */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Search Input Box */}
-            <div className="glass-panel p-4 rounded-2xl border-slate-800 space-y-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search neighbourhood..."
-                  className="w-full bg-[#050a1b] border border-slate-700/80 focus:border-cyan-400 rounded-xl pl-10 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400/50 font-sans"
-                />
-              </div>
-
-              {/* Neighbourhood Selection List */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider block">
-                  Select Area:
-                </span>
-                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                  {filteredAreas.map((area) => {
-                    const isSelected = selectedArea.id === area.id;
-                    const risk = getRiskLevel(area.scores.overall);
-
-                    return (
-                      <button
-                        key={area.id}
-                        type="button"
-                        onClick={() => setSelectedArea(area)}
-                        className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 select-none cursor-pointer ${
-                          isSelected
-                            ? "bg-cyan-500/15 border-cyan-500/50 text-white shadow-md shadow-cyan-500/10"
-                            : "bg-slate-900/40 border-slate-800/80 hover:bg-slate-800/50 text-slate-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <MapPin
-                            className={`w-3.5 h-3.5 shrink-0 ${
-                              isSelected ? "text-cyan-400" : "text-slate-500"
-                            }`}
-                          />
-                          <span className="text-xs font-semibold truncate">
-                            {area.name}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0 font-mono text-[11px]">
-                          <span className={risk.textColor}>
-                            {area.scores.overall}
-                          </span>
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                              isSelected ? "bg-cyan-950 border border-cyan-600 text-cyan-200" : "bg-slate-800 text-slate-400"
-                            }`}
-                          >
-                            {risk.label}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Environmental Layer Controller */}
-            <div className="glass-panel p-5 rounded-2xl border-slate-800">
-              <LayerControls
-                activeLayer={activeLayer}
-                onLayerChange={(layer) => setActiveLayer(layer)}
-              />
-            </div>
-          </div>
-
-          {/* Right Column: GIS Map Placeholder Viewport & Selected Area Floating Card */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="relative">
-              <MapPlaceholder
-                activeLayer={activeLayer}
-                selectedArea={selectedArea}
-                heightClassName="h-[520px]"
-              />
-
-              {/* Floating Area Inspector Card Overlay */}
-              <div className="absolute top-16 right-4 z-30 hidden md:block">
-                <AreaPopup area={selectedArea} />
-              </div>
-            </div>
-
-            {/* Mobile Area Popup (visible below map on small screens) */}
-            <div className="md:hidden">
-              <AreaPopup area={selectedArea} />
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Full-Width Risk Legend */}
-        <div className="pt-2">
-          <RiskLegend />
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  );
+  return <div className="min-h-screen bg-[#030712] text-slate-100"><Navbar /><main className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-12 pt-24 sm:px-6 lg:px-8">
+    <div className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-4 md:flex-row md:items-end"><div><span className="text-xs font-mono font-bold tracking-widest text-cyan-400">SPATIAL EXPLORER</span><h1 className="mt-1 text-3xl font-extrabold text-white">Explore Your City</h1></div><label className="text-xs text-slate-400">City<select value={cityId} onChange={(event) => selectCity(event.target.value)} className="ml-2 rounded-lg border border-cyan-500/30 bg-slate-900 px-3 py-2 text-cyan-300"><option value="">Select a city</option>{cities.map((city) => <option key={city.id} value={city.id}>{city.name}, {city.country}</option>)}</select></label></div>
+    {loading ? <DataNotice title="Loading backend data" message="Requesting the available cities and areas." /> : error ? <DataNotice title="Data unavailable" message={error} error /> : cities.length === 0 ? <DataNotice title="No cities available" message="The connected database returned an empty city list." /> : null}
+    <div className="grid gap-6 lg:grid-cols-12"><aside className="space-y-6 lg:col-span-4"><div className="space-y-3 rounded-2xl border border-slate-800 p-4 glass-panel"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search areas" className="w-full rounded-xl border border-slate-700 bg-[#050a1b] py-2 pl-10 pr-3 text-xs text-white" /></div><div className="max-h-64 space-y-1.5 overflow-y-auto">{filteredAreas.map((area) => <button key={area.id} type="button" onClick={() => selectArea(area.id)} className={`flex w-full items-center gap-2 rounded-xl border p-2.5 text-left text-xs ${area.id === areaId ? "border-cyan-500/50 bg-cyan-500/15 text-white" : "border-slate-800 bg-slate-900/40 text-slate-300"}`}><MapPin className="h-3.5 w-3.5" />{area.name}</button>)}{!loading && cityId && filteredAreas.length === 0 ? <p className="p-3 text-xs text-slate-500">No matching areas.</p> : null}</div></div><div className="rounded-2xl border border-slate-800 p-5 glass-panel"><LayerControls activeLayer={activeLayer} onLayerChange={selectLayer} /></div></aside>
+      <section className="space-y-4 lg:col-span-8"><div className="relative"><MapPlaceholder activeLayer={activeLayer} selectedArea={selectedArea} layer={layer} layerLoading={layerLoading} layerError={layerError} heightClassName="h-[520px]" />{selectedArea ? <div className="absolute right-4 top-16 z-20 hidden md:block"><AreaPopup area={selectedArea} city={selectedCity} risk={risk} /></div> : null}</div>{selectedArea ? <div className="md:hidden"><AreaPopup area={selectedArea} city={selectedCity} risk={risk} /></div> : null}</section></div><RiskLegend />
+  </main><Footer /></div>;
 }

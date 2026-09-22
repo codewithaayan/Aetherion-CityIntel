@@ -1,227 +1,54 @@
-import React from "react";
-import Link from "next/link";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Activity } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { ScoreCard } from "@/components/dashboard/ScoreCard";
-import { RiskCard } from "@/components/dashboard/RiskCard";
 import { PopulationCard } from "@/components/dashboard/PopulationCard";
-import { InsightCard } from "@/components/dashboard/InsightCard";
-import { RiskRadarChart } from "@/components/charts/RiskRadarChart";
-import { TrendChart } from "@/components/charts/TrendChart";
-import { ExposureChart } from "@/components/charts/ExposureChart";
+import { RiskCard } from "@/components/dashboard/RiskCard";
+import { ScoreCard } from "@/components/dashboard/ScoreCard";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import { MapPlaceholder } from "@/components/map/MapPlaceholder";
-import { getAreaById } from "@/lib/mock-data";
-import { Sparkles, Sliders, BarChart2, Activity, Globe, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { DataNotice } from "@/components/ui/DataNotice";
+import { errorMessage, getArea, getCities, getLayer, getPopulation, getRisk } from "@/lib/api";
+import type { Area, City } from "@/types/area";
+import type { MapLayer, PopulationResponse, RiskResponse } from "@/types/risk";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
+export default function AreaPage() {
+  const id = String(useParams<{ id: string }>().id);
+  const [area, setArea] = useState<Area | null>(null);
+  const [city, setCity] = useState<City>();
+  const [risk, setRisk] = useState<RiskResponse | null>(null);
+  const [population, setPopulation] = useState<PopulationResponse | null>(null);
+  const [layer, setLayer] = useState<MapLayer | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [secondaryErrors, setSecondaryErrors] = useState<string[]>([]);
 
-export default async function AreaDashboardPage({ params }: PageProps) {
-  const { id } = await params;
-  const area = getAreaById(id);
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([getArea(id), getCities(), getRisk(id), getPopulation(id), getLayer(id, "heat")]).then((results) => {
+      if (!active) return;
+      const [areaResult, citiesResult, riskResult, populationResult, layerResult] = results;
+      if (areaResult.status === "rejected") { setError(errorMessage(areaResult.reason)); return; }
+      setArea(areaResult.value);
+      if (citiesResult.status === "fulfilled") setCity(citiesResult.value.find((item) => item.id === areaResult.value.cityId));
+      if (riskResult.status === "fulfilled") setRisk(riskResult.value);
+      if (populationResult.status === "fulfilled") setPopulation(populationResult.value);
+      if (layerResult.status === "fulfilled") setLayer(layerResult.value);
+      const missing = [riskResult, populationResult, layerResult].filter((result) => result.status === "rejected").map((result) => errorMessage((result as PromiseRejectedResult).reason));
+      setSecondaryErrors([...new Set(missing)]);
+    });
+    return () => { active = false; };
+  }, [id]);
 
-  return (
-    <div className="min-h-screen flex flex-col bg-[#030712] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
-      <Navbar />
+  if (error) return <div className="min-h-screen bg-[#030712] text-slate-100"><Navbar /><main className="mx-auto max-w-4xl px-4 pt-28"><DataNotice title="Area unavailable" message={error} error /></main></div>;
+  if (!area) return <div className="min-h-screen bg-[#030712] text-slate-100"><Navbar /><main className="mx-auto max-w-4xl px-4 pt-28"><DataNotice title="Loading area" message="Requesting the area and its available datasets." /></main></div>;
 
-      <main className="flex-1 pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-10">
-        {/* 1. Header with Breadcrumbs and Actions */}
-        <DashboardHeader area={area} />
-
-        {/* 2. Primary Score Card (72/100 HIGH PRIORITY + AI Summary) */}
-        <ScoreCard area={area} />
-
-        {/* 3. 6 Reusable Risk Cards Grid */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Activity className="w-4 h-4 text-cyan-400" />
-              <span>Multi-Dimensional Environmental Risk Indicators</span>
-            </h3>
-            <span className="text-[11px] font-mono text-slate-400">
-              Composite Vector Scoring
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <RiskCard
-              id="heat"
-              title="Heat Risk"
-              score={area.scores.heat}
-              levelLabel="HIGH"
-              iconType="heat"
-              description="LST thermal anomaly"
-            />
-            <RiskCard
-              id="air"
-              title="Air Quality"
-              score={area.scores.air}
-              levelLabel="ELEVATED"
-              iconType="air"
-              description="Aerosol & PM2.5 load"
-            />
-            <RiskCard
-              id="flood"
-              title="Flood Vulnerability"
-              score={area.scores.flood}
-              levelLabel="MOD-HIGH"
-              iconType="flood"
-              description="Topographic runoff pooling"
-            />
-            <RiskCard
-              id="green"
-              title="Green Infrastructure"
-              score={area.scores.green}
-              levelLabel="LOW COVERAGE"
-              unit="%"
-              iconType="green"
-              description="Vegetative canopy deficit"
-              isDeficitMetric
-            />
-            <RiskCard
-              id="mobility"
-              title="Mobility Pressure"
-              score={area.scores.mobility}
-              levelLabel="MODERATE"
-              iconType="mobility"
-              description="Corridor congestion load"
-            />
-            <RiskCard
-              id="population"
-              title="Population Exposure"
-              score={area.scores.populationExposure}
-              levelLabel="HIGH"
-              iconType="population"
-              description="Demographic overlap"
-            />
-          </div>
-        </div>
-
-        {/* 4. Data Visualizations: Radar Chart & Historical Trend Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Radar Chart: Dimension Comparison */}
-          <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border-slate-800 space-y-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-mono font-bold tracking-wider text-white uppercase flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-cyan-400" />
-                  <span>Risk Profile Radar</span>
-                </h3>
-                <span className="text-[10px] font-mono text-cyan-400">
-                  6 DIMENSIONS
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Area performance indexed against the greater metropolitan baseline.
-              </p>
-            </div>
-
-            <RiskRadarChart scores={area.scores} />
-          </div>
-
-          {/* 12-Month Multi-Variable Historical Trend Chart */}
-          <div className="lg:col-span-7 glass-panel p-6 rounded-2xl border-slate-800 space-y-4 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-mono font-bold tracking-wider text-white uppercase flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-cyan-400" />
-                  <span>12-Month Historical Environmental Trends</span>
-                </h3>
-                <span className="text-[10px] font-mono text-cyan-400">
-                  OCT 2025 – SEP 2026
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Multi-satellite time-series assimilation tracking seasonal oscillations.
-              </p>
-            </div>
-
-            <TrendChart data={area.historicalTrends} />
-          </div>
-        </div>
-
-        {/* 5. GIS Map Section (Reserved for Infinity) */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Globe className="w-4 h-4 text-cyan-400" />
-              <span>ENVIRONMENTAL RISK MAP</span>
-            </h3>
-            <span className="text-[11px] font-mono text-cyan-400">
-              RESERVED FOR INFINITY GIS MODULE
-            </span>
-          </div>
-
-          <MapPlaceholder
-            activeLayer="overall"
-            selectedArea={area}
-            heightClassName="h-[440px]"
-          />
-        </div>
-
-        {/* 6. Population Exposure & Distribution Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7">
-            <PopulationCard area={area} />
-          </div>
-
-          <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border-slate-800 flex flex-col justify-between">
-            <div>
-              <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-white">
-                Exposure Demographics
-              </h4>
-              <p className="text-xs text-slate-400 mt-1">
-                Proportion of residents living inside acute compound risk grids.
-              </p>
-            </div>
-
-            <ExposureChart data={area.exposureDistribution} />
-          </div>
-        </div>
-
-        {/* 7. Key Diagnostic Insights */}
-        <InsightCard insights={area.keyInsights} />
-
-        {/* 8. Bottom Action CTAs */}
-        <div className="glass-panel p-8 rounded-2xl border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-6 bg-gradient-to-r from-[#04091a] via-[#091330] to-[#04091a]">
-          <div className="space-y-1 text-center sm:text-left">
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              Ready to take action in {area.name}?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300">
-              Consult the AI Analyst for deeper diagnostics or simulate urban interventions to reduce risk scores.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <Link href={`/analysis/${area.id}`}>
-              <Button
-                variant="secondary"
-                size="md"
-                leftIcon={<Sparkles className="w-4 h-4 text-cyan-400" />}
-              >
-                Ask AI Analyst
-              </Button>
-            </Link>
-
-            <Link href={`/simulate/${area.id}`}>
-              <Button
-                variant="glow"
-                size="md"
-                leftIcon={<Sliders className="w-4 h-4 text-slate-950" />}
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-              >
-                Run Intervention Simulation
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  );
+  const scores = risk?.scores;
+  return <div className="min-h-screen bg-[#030712] text-slate-100"><Navbar /><main className="mx-auto w-full max-w-7xl space-y-10 px-4 pb-20 pt-24 sm:px-6 lg:px-8"><DashboardHeader area={area} city={city} />{secondaryErrors.map((message) => <DataNotice key={message} title="Some data is unavailable" message={message} error />)}<ScoreCard risk={risk} />
+    <section className="space-y-4"><h3 className="flex items-center gap-2 text-base font-bold text-white"><Activity className="h-4 w-4 text-cyan-400" />Environmental risk indicators</h3><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"><RiskCard title="Heat" score={scores?.heat ?? null} iconType="heat" /><RiskCard title="Air" score={scores?.air ?? null} iconType="air" /><RiskCard title="Flood" score={scores?.flood ?? null} iconType="flood" /><RiskCard title="Green" score={scores?.green ?? null} iconType="green" /><RiskCard title="Mobility" score={scores?.mobility ?? null} iconType="mobility" /><RiskCard title="Population exposure" score={scores?.populationExposure ?? null} iconType="population" /></div></section>
+    <MapPlaceholder activeLayer="heat" selectedArea={area} layer={layer} layerError={layer ? null : "Heat layer is unavailable."} heightClassName="h-[440px]" /><PopulationCard area={area} population={population} risk={risk} />
+    <div className="grid gap-4 md:grid-cols-2"><DataNotice title="Historical trends not connected" message="The backend has no agreed history route or time-series contract yet." /><DataNotice title="Diagnostic insights not connected" message="AI analysis stays unavailable until Arjun supplies the request and response models." /></div>
+  </main><Footer /></div>;
 }

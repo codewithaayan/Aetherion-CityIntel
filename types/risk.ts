@@ -1,39 +1,51 @@
+import type { Area, GeoJSONGeometry } from "./area";
+
 export interface RiskScores {
-  heat: number;
-  air: number;
-  flood: number;
-  green: number;
-  mobility: number;
-  populationExposure: number;
-  overall: number;
+  overall: number | null;
+  heat: number | null;
+  air: number | null;
+  flood: number | null;
+  green: number | null;
+  mobility: number | null;
+  populationExposure: number | null;
 }
 
-export interface RiskDimension {
-  id: keyof RiskScores;
-  name: string;
-  score: number;
-  level: "LOW" | "MODERATE" | "ELEVATED" | "HIGH" | "CRITICAL";
-  iconName: string;
-  description: string;
-  trend: "increasing" | "stable" | "decreasing";
-  changeRate: string;
-  dataSource: string;
-  confidence: number;
+export interface SourceMetadata {
+  updated: string | null;
+  dataSources: string[] | null;
 }
 
-export interface HistoricalTrendPoint {
-  month: string;
-  heat: number;
-  air: number;
-  flood: number;
-  green: number;
-  overall: number;
+export interface RiskResponse {
+  area: { id: string; name: string; city: string };
+  scores: RiskScores;
+  exposure: { population: number | null; highRiskPopulation: number | null };
+  metadata: SourceMetadata;
 }
 
-export interface ExposureBreakdown {
-  label: string;
-  population: number;
-  percentage: number;
-  riskCategory: "Low" | "Moderate" | "Elevated" | "High";
-  color: string;
+export interface GridPopulation {
+  gridCellId: string;
+  timestamp: string;
+  population: number | null;
 }
+
+export interface PopulationResponse {
+  area: Area;
+  exposure: { population: number | null; highRiskPopulation: number | null };
+  gridPopulation: GridPopulation[];
+  metadata: SourceMetadata;
+}
+
+export interface MapFeature {
+  type: "Feature";
+  geometry: GeoJSONGeometry | null;
+  properties: Record<string, unknown> | null;
+}
+
+export interface MapLayer {
+  type: "FeatureCollection";
+  features: MapFeature[];
+  metadata: SourceMetadata;
+  incompleteGridCellIds: string[];
+}
+
+export type LayerName = "heat" | "green" | "flood";

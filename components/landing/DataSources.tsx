@@ -1,5 +1,5 @@
 import React from "react";
-import { DATA_SOURCES } from "@/lib/mock-data";
+import { DATA_SOURCES } from "@/lib/content";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Satellite, Globe, Layers, CloudRain, Wind, Users, MapPin } from "lucide-react";

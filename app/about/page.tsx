@@ -1,10 +1,10 @@
 import React from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { TEAM_MEMBERS } from "@/lib/mock-data";
-import { Sparkles, Layers, Cpu, Database, Globe, Compass, ArrowDown, ShieldCheck } from "lucide-react";
+import { TEAM_MEMBERS } from "@/lib/content";
+import { Sparkles, Layers, Cpu, Database, Globe, ArrowDown, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardTitle, CardDescription } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 
 export const metadata = {
   title: "About UrbanPulse — Team Aetherion",

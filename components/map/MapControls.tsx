@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Layers, Eye, RefreshCw, Compass } from "lucide-react";
+import { Layers, RefreshCw, Compass } from "lucide-react";
 
 export interface MapControlsProps {
   onResetView?: () => void;

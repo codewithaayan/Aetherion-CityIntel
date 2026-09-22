@@ -77,10 +77,14 @@ Features; the `geometry` field is a GeoJSON geometry or null.
 
 ### Current frontend integration
 
-The team frontend reviewed at commit `a7c790c0965db4c90e4f1aa601a83023ebbe5430`
-uses one large mock `Area` object. The blueprint API intentionally splits that data
-across routes. Phantom should join responses by the stable area ID in frontend data
-loading code:
+The repository frontend now implements the GET mappings below through `lib/api.ts`.
+It converts snake_case explicitly, preserves nulls, and displays backend error and
+empty states. The simulator and AI pages deliberately do not send POST requests
+because their owner-defined request models are still absent. See
+`docs/frontend-integration.md` for the screen-by-screen status.
+
+The blueprint API intentionally splits frontend data across routes. The current
+frontend joins these responses by stable area ID:
 
 | Frontend need | Existing backend call |
 | --- | --- |
@@ -93,24 +97,22 @@ loading code:
 | Intervention submission | `POST /api/areas/{area_id}/simulate` after owner schema agreement |
 | AI question | `POST /api/areas/{area_id}/ai-analysis` after Arjun's schema agreement |
 
-Backend JSON uses `snake_case`. The current TypeScript types use `camelCase`, so the
-frontend connection layer must map names explicitly, for example
+Backend JSON uses `snake_case`. The TypeScript types use `camelCase`, so `lib/api.ts`
+maps names explicitly, for example
 `city_id -> cityId`, `high_risk_population -> highRiskPopulation`, and
 `population_exposure -> populationExposure`. The backend does not duplicate fields
 under both naming conventions.
 
-The frontend mock also contains `coordinates`, `areaKm2`, `densityPerKm2`,
-`dataConfidence`, `satellitePassDate`, `summary`, `keyInsights`,
-`historicalTrends`, and `exposureDistribution`. Those fields do not exist in the
+The removed frontend mock also contained `coordinates`, `areaKm2`, `densityPerKm2`,
+`dataConfidence`, `satellitePassDate`, `summary`, `keyInsights`, `historicalTrends`,
+and `exposureDistribution`. Those fields do not exist in the
 blueprint's six tables or ten route contracts. Some would require calculations,
 provenance, history retrieval or AI output. They remain documented connection points
 until the responsible teammates provide data and agree where each field belongs.
 
-The current UI exposes `overall`, `air`, `mobility`, and `population` map controls,
-but the blueprint defines map routes only for heat, green and flood. Do not request
-an undocumented layer route. The commented `/api/vitals` call in
-`components/landing/HeroVisual.tsx` is also outside the blueprint and is not
-implemented by this backend.
+The UI now exposes only the heat, green, and flood map routes. The old undocumented
+`/api/vitals` example was removed; the landing panel uses the documented city, area,
+and risk GETs.
 
 ### Risk
 
@@ -189,7 +191,7 @@ Once registered, the supplied request model validates all requests before the
 adapter runs. Arjun/Chip must share those models with Phantom; default OpenAPI shows
 an object and marks the contract unresolved, rather than publishing invented fields.
 
-The current frontend mock proposes simulator inputs named `treeCoverage`,
+The removed frontend mock proposed simulator inputs named `treeCoverage`,
 `coolRoofs`, `drainage`, `trafficReduction`, and `greenCorridors`, and an AI response
 with `primaryIssue`, `whyItMatters`, `evidence`, `recommendedActions`, and
 `scientificNote`. These are useful interface proposals, but their units, ranges,

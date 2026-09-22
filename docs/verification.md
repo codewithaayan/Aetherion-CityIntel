@@ -1,6 +1,6 @@
 # Verification record
 
-Checks run on 7-8, 15 and 17 September 2026 with Python 3.12.13 on this Windows workspace:
+Checks run through 22 September 2026 on this Windows workspace:
 
 - `python -m pytest -q -p no:cacheprovider`: **157 passed, 1 skipped**.
 - `python -m pip check`: no broken requirements.
@@ -12,10 +12,10 @@ Checks run on 7-8, 15 and 17 September 2026 with Python 3.12.13 on this Windows 
 - The 15 September automated checks confirm OpenAPI still contains exactly those
   ten paths. The population route now references `PopulationResponse`, and a
   supplied zero-valued `population_exposure` score survives response validation.
-- Reviewed the downloaded team frontend at commit
-  `a7c790c0965db4c90e4f1aa601a83023ebbe5430`. Its Git working tree remained clean.
-  It has no live API calls; the only referenced call is a commented `/api/vitals`
-  placeholder outside the blueprint. No file in the team checkout was changed.
+- Frontend validation passed `npm run lint` and `npm run build` with Next.js 16.3.4.
+  Browser checks loaded `/` and `/explore` without an error overlay. With FastAPI
+  running and no `DATABASE_URL`, `/explore` called `GET /api/cities`, received the
+  expected 503, and displayed `The team database is not configured.`
 
 The test suite covers route names, city/area lookups, empty datasets, missing
 records and measurements, supplied GeoJSON, preservation of null and zero, risk
@@ -69,9 +69,10 @@ database integration claim.
 
 Automated test fixtures remain explicitly synthetic; the separate live checks above
 used real public source responses without seeding the application. No real teammate
-processing adapter or AI provider was available or tested. The frontend dependency
-directory was not included, so its TypeScript compiler was not run. Scientific
-validation remains with Ayesha and Chip.
+processing adapter or AI provider was available or tested. Frontend TypeScript,
+lint, production build, and browser error-state handling were checked. A populated
+PostGIS database was unavailable, so live successful dashboard values could not be
+browser-tested. Scientific validation remains with Ayesha and Chip.
 
 The installed Starlette test client emitted two upstream deprecation warnings
 about HTTPX and the AnyIO portal alias. They did not cause failures. The current

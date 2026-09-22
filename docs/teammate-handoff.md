@@ -259,6 +259,17 @@ or invent their contents. It should report missing layers explicitly.
 
 ## Phantom: where frontend calls belong
 
+The frontend connection work is now implemented through `lib/api.ts`. City, area,
+risk, population, heat, green, and flood GET responses are displayed with explicit
+loading, empty, missing, and error states. The old mock data, fixed AI replies, and
+simulator coefficients were removed. Infinity can consume the real FeatureCollection
+already loaded by the map component.
+
+Arjun and Chip still need to provide the simulator request/response models before
+the frontend can send that POST. Arjun still needs to provide the AI request/response
+models and adapter before the AI page can send its POST. Until then both pages show
+an honest pending state. See `docs/frontend-integration.md` for exact mappings.
+
 Frontend interaction code stays with Phantom. The backend contains no frontend
 event handlers. Use these existing interactions to call the documented routes:
 
@@ -276,35 +287,14 @@ show unavailable states for 503, and show the modelled-scenario label. Do not tu
 an empty city list into a demonstration dataset. Share the owner-defined POST
 models before implementing their request payloads.
 
-### Mapping the uploaded frontend
+### Frontend status
 
-The frontend in this repository was reviewed at commit
-`a7c790c0965db4c90e4f1aa601a83023ebbe5430`. It is currently mock-driven and has no
-live fetch calls. Keep UI interaction changes in that repository with Phantom. The
-backend connection points for those existing screens are:
+`lib/api.ts` now performs the documented GET requests and maps backend snake_case to
+frontend camelCase. The explorer, landing city panel, and area dashboard use those
+responses. Only heat, green, and flood layer controls remain. The old random values,
+combined mock area, fixed AI replies, simulator coefficients, and unsupported charts
+were removed. See `docs/frontend-integration.md` for the exact route mapping.
 
-| Frontend file | Replace mock access with |
-| --- | --- |
-| `app/explore/page.tsx` | cities, city areas, selected-area risk, and one of the three supported layer GETs |
-| `app/area/[id]/page.tsx` | area detail, risk, population, and supported layer GETs |
-| `app/simulate/[id]/page.tsx` | simulator POST after Arjun + Chip approve the request/response models |
-| `app/analysis/[id]/page.tsx` and `components/ai/AIChat.tsx` | AI-analysis POST after Arjun approves its models |
-
-The current frontend `Area` type combines records, calculated values, AI text and
-chart history. The backend does not claim that object as a database record. Phantom
-should create a frontend mapper that joins the documented responses and converts
-snake_case to camelCase. Missing fields stay unavailable; the mapper must not copy
-the values from `lib/mock-data.ts` as live data.
-
-The following uploaded demo logic must remain disconnected from Abd's backend until
-its owners replace or approve it:
-
-- `calculateSimulation()` contains mock coefficients and assumed ranges.
-- `AI_KNOWLEDGE_BASE` contains fixed claims, measurements and recommendations.
-- `HeroVisual.tsx` generates random risk values and mentions `/api/vitals`, which is
-  not one of the ten blueprint routes.
-- The UI has map controls beyond the supported heat, green and flood layer routes.
-- Historical trends, exposure distributions, confidence, density, area size and
-  satellite pass labels have no agreed backend transport yet.
-
-No frontend file was edited during Abd's compatibility update.
+Historical trends, exposure distributions, confidence, density, area size, and
+satellite pass labels still have no agreed backend transport and therefore are not
+shown as data. AI and simulator POST calls remain pending their owner schemas.

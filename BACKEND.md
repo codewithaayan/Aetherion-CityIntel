@@ -105,14 +105,11 @@ their adapters are registered. External clients have passed limited live
 connectivity checks, but no team dataset or processing pipeline is connected.
 The existing service projections still accept processed records for the routes.
 
-The team's frontend upload was reviewed at commit
-`a7c790c0965db4c90e4f1aa601a83023ebbe5430`. It is still backed by
-`lib/mock-data.ts` and contains no live API calls. Abd's compatibility update keeps
-the ten blueprint routes, adds the already-existing population-exposure score to the
-risk response, and documents the population response in OpenAPI. See the
-[API contract](docs/backend-contract.md#current-frontend-integration) and the
-[frontend handoff](docs/teammate-handoff.md#mapping-the-uploaded-frontend). No team
-frontend file was changed or copied into the backend.
+The frontend now calls the documented GET routes through `lib/api.ts`, maps
+snake_case to camelCase, and shows explicit missing/error states. Its simulator and
+AI pages remain pending the owner-defined POST models. See the [API contract](docs/backend-contract.md#current-frontend-integration),
+[frontend integration report](docs/frontend-integration.md), and
+[teammate handoff](docs/teammate-handoff.md#frontend-status).
 
 ## Checks
 

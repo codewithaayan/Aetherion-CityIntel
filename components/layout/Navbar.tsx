@@ -23,9 +23,9 @@ export function Navbar() {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Explore", href: "/explore", icon: Globe },
-    { name: "Intelligence", href: "/area/gulshan-iqbal", icon: Layers },
-    { name: "Simulator", href: "/simulate/gulshan-iqbal", icon: Sliders },
-    { name: "AI Analyst", href: "/analysis/gulshan-iqbal", icon: Sparkles },
+    { name: "Intelligence", href: "/explore", icon: Layers },
+    { name: "Simulator", href: "/explore", icon: Sliders },
+    { name: "AI Analyst", href: "/explore", icon: Sparkles },
     { name: "Methodology", href: "/methodology" },
     { name: "About", href: "/about" },
   ];
