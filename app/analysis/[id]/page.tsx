@@ -177,10 +177,6 @@ export default function AnalysisPage() {
               <span className="text-xs font-mono font-bold tracking-widest text-cyan-400">
                 PLANETARY AI INTELLIGENCE
               </span>
-              <span className="rounded bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-mono text-amber-300 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                Autonomous Diagnostics
-              </span>
             </div>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white">
               {currentArea.name} Spatial AI Diagnostic

@@ -163,10 +163,6 @@ export default function SimulationPage() {
               <span className="text-xs font-mono font-bold tracking-widest text-emerald-400">
                 INTERVENTION SIMULATOR
               </span>
-              <span className="rounded bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono text-emerald-300 flex items-center gap-1">
-                <Zap className="h-3 w-3" />
-                Live Spatial Projection
-              </span>
             </div>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white">
               {currentArea.name} Intervention Simulator
