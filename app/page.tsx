@@ -8,7 +8,7 @@ import { DataSources } from "@/components/landing/DataSources";
 import { CTA } from "@/components/landing/CTA";
 
 export const metadata = {
-  title: "UrbanPulse — Planetary Intelligence for Resilient Cities",
+  title: "Aetherion CityIntel —Turning Urban Data into Smarter Decisions",
   description:
     "NASA Earth Observation × Modern Climate-Tech Startup × AI Intelligence Platform. Actionable neighbourhood-level environmental risk assessment.",
 };

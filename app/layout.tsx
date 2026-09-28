@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "UrbanPulse — NASA Earth Observation × Climate-Tech AI Intelligence",
+  title: "Aetherion CityIntel — NASA Earth Observation × Climate-Tech AI Intelligence",
   description:
-    "UrbanPulse transforms satellite, environmental, geographic and population data into actionable neighbourhood-level intelligence.",
+    "Aetherion CityIntel transforms satellite, environmental, geographic and population data into actionable neighbourhood-level intelligence.",
 };
 
 export default function RootLayout({

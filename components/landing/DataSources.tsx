@@ -27,7 +27,7 @@ export function DataSources() {
             Powered by Global Environmental Intelligence
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-            UrbanPulse ingests openly accessible scientific data from leading space agencies, meteorological institutes, and open geospatial consortia.
+            Aetherion CityIntel ingests openly accessible scientific data from leading space agencies, meteorological institutes, and open geospatial consortia.
           </p>
           <div className="pt-1">
             <span className="text-[11px] font-mono text-slate-500">

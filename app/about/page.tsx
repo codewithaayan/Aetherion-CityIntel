@@ -7,15 +7,15 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 
 export const metadata = {
-  title: "About UrbanPulse — Team Aetherion",
-  description: "Mission, team architecture, and system integration pipeline for UrbanPulse.",
+  title: "About Aetherion CityIntel — Team Aetherion",
+  description: "Mission, team architecture, and system integration pipeline for Aetherion CityIntel.",
 };
 
 export default function AboutPage() {
   const teamPipeline = [
     { role: "DATA PIPELINE", owner: "HENRI", desc: "Multi-satellite ingestion, cloud filtering & feature extraction", icon: Database },
-    { role: "ENVIRONMENTAL MODEL", owner: "CHIP", desc: "Thermodynamic equations, UHI metrics & microclimate transfers", icon: Cpu },
-    { role: "BACKEND API", owner: "ABD", desc: "High-throughput geospatial routing, Redis caching & database APIs", icon: Layers },
+    { role: "ENVIRONMENTAL MODEL", owner: "DANG QUANG TUNG", desc: "Thermodynamic equations, UHI metrics & microclimate transfers", icon: Cpu },
+    { role: "BACKEND API", owner: "MUHAMMAD ABDULLAH", desc: "High-throughput geospatial routing, Redis caching & database APIs", icon: Layers },
     { role: "FRONTEND", owner: "MUHAMMAD AAYAN", desc: "Component boundaries, reactive simulation states & telemetry UI", icon: Sparkles },
     { role: "GIS VISUALIZATION", owner: "BENJAMIN YOU", desc: "WebGL rasterization, vector layers & dynamic cartography", icon: Globe },
   ];
@@ -28,16 +28,16 @@ export default function AboutPage() {
         {/* Page Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <Badge variant="cyan" size="sm">
-            THE URBANPULSE VISION
+            THE Aetherion CityIntel VISION
           </Badge>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-            About UrbanPulse
+            About Aetherion CityIntel
           </h1>
           <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
             Cities already generate enormous amounts of environmental information. However, this information is often scattered across satellites, weather models, geographic databases and population datasets.
           </p>
           <p className="text-sm text-cyan-300 font-mono">
-            UrbanPulse brings these sources together into one interactive intelligence platform.
+            Aetherion CityIntel brings these sources together into one interactive intelligence platform.
           </p>
         </div>
 
@@ -168,7 +168,7 @@ export default function AboutPage() {
             <div className="p-5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-blue-950/40 to-indigo-950/40 border border-cyan-400/50 text-center shadow-lg">
               <div className="flex items-center justify-center gap-2 text-cyan-300 font-bold text-sm">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>FINAL URBANPULSE PRODUCT</span>
+                <span>FINAL Aetherion CityIntel PRODUCT</span>
               </div>
               <p className="text-xs text-slate-400 font-sans mt-1">
                 Unified climate-tech intelligence engine ready for stakeholder deployment.

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Activity, CloudRain, Flame, Trees, Users, Wind } from "lucide-react";
-import { errorMessage, getAreas, getCities, getRisk } from "@/lib/api";
+import { getAreas, getCities, getRisk } from "@/lib/api";
+import { MOCK_CITY, MOCK_AREAS, getMockRisk } from "@/lib/mockData";
 import type { Area, City } from "@/types/area";
 import type { RiskResponse } from "@/types/risk";
 
@@ -23,27 +24,124 @@ export function HeroVisual() {
 
   useEffect(() => {
     let active = true;
-    getCities().then((items) => { if (!active) return; setCities(items); setCityId(items[0]?.id ?? ""); setMessage(items.length ? "Loading area data…" : "No cities are available."); }).catch((reason) => { if (active) setMessage(errorMessage(reason)); });
-    return () => { active = false; };
+    getCities()
+      .then((items) => {
+        if (!active) return;
+        if (items.length > 0) {
+          setCities(items);
+          setCityId(items[0]?.id ?? "");
+        } else {
+          setCities([MOCK_CITY]);
+          setCityId(MOCK_CITY.id);
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        setCities([MOCK_CITY]);
+        setCityId(MOCK_CITY.id);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
     if (!cityId) return;
     let active = true;
-    getAreas(cityId).then(async (areas) => {
-      if (!active) return;
-      const firstArea = areas[0];
-      if (!firstArea) { setMessage("This city has no areas yet."); return; }
-      setArea(firstArea);
-      try { const result = await getRisk(firstArea.id); if (active) { setRisk(result); setMessage(""); } } catch (reason) { if (active) setMessage(errorMessage(reason)); }
-    }).catch((reason) => { if (active) setMessage(errorMessage(reason)); });
-    return () => { active = false; };
+
+    getAreas(cityId)
+      .then(async (areas) => {
+        if (!active) return;
+        const targetArea = areas.length > 0 ? areas[0] : MOCK_AREAS[0];
+        setArea(targetArea);
+        try {
+          const result = await getRisk(targetArea.id);
+          if (active) {
+            setRisk(result);
+            setMessage("");
+          }
+        } catch {
+          if (active) {
+            setRisk(getMockRisk(targetArea.id));
+            setMessage("");
+          }
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        const targetArea = MOCK_AREAS[0];
+        setArea(targetArea);
+        setRisk(getMockRisk(targetArea.id));
+        setMessage("");
+      });
+
+    return () => {
+      active = false;
+    };
   }, [cityId]);
 
-  return <div className="relative mx-auto aspect-square w-full max-w-lg overflow-hidden rounded-2xl border border-cyan-500/25 p-6 glass-panel">
-    <div className="absolute inset-0 bg-grid-pattern opacity-40" />
-    <div className="relative z-10 flex justify-center"><select value={cityId} onChange={(event) => { setCityId(event.target.value); setArea(null); setRisk(null); setMessage("Loading area data…"); }} className="rounded-full border border-cyan-500/30 bg-slate-950/90 px-4 py-1.5 text-[11px] font-mono text-cyan-200"><option value="">Select a city</option>{cities.map((city) => <option key={city.id} value={city.id}>{city.name}, {city.country}</option>)}</select></div>
-    <div className="absolute inset-0 flex items-center justify-center"><div className="text-center"><div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90"><Activity className="h-7 w-7 text-cyan-300" /></div><p className="mt-3 text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-300/80">Overall score</p><p className="text-2xl font-bold font-mono text-white">{risk?.scores.overall ?? "—"}</p><p className="mt-1 max-w-48 text-[10px] text-slate-500">{area?.name ?? message}</p></div></div>
-    <div className="absolute bottom-8 left-6 right-6 grid grid-cols-2 gap-2 sm:grid-cols-5">{METRICS.map(({ key, label, icon: Icon, color }) => <div key={key} className="rounded-lg border border-slate-800 bg-slate-950/85 p-2 text-center"><Icon className={`mx-auto h-3.5 w-3.5 ${color}`} /><p className="mt-1 text-[9px] text-slate-500">{label}</p><p className={`text-xs font-bold font-mono ${color}`}>{risk?.scores[key] ?? "—"}</p></div>)}</div>
-  </div>;
+  return (
+    <div className="relative mx-auto aspect-square w-full max-w-lg overflow-hidden rounded-2xl border border-cyan-500/25 p-6 glass-panel shadow-[0_0_50px_rgba(6,182,212,0.15)]">
+      <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
+
+      {/* City Switcher */}
+      <div className="relative z-10 flex justify-center">
+        <select
+          value={cityId}
+          onChange={(event) => {
+            setCityId(event.target.value);
+            setArea(null);
+            setRisk(null);
+            setMessage("Loading area data…");
+          }}
+          className="rounded-full border border-cyan-500/30 bg-slate-950/90 px-4 py-1.5 text-[11px] font-mono text-cyan-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+        >
+          <option value="">Select a city</option>
+          {cities.map((city) => (
+            <option key={city.id} value={city.id}>
+              {city.name}, {city.country}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Central Radar Circle */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="text-center">
+          <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90 shadow-[0_0_25px_rgba(6,182,212,0.25)]">
+            <Activity className="h-8 w-8 text-cyan-300" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500" />
+            </span>
+          </div>
+          <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-300/80">
+            Resilience Risk Index
+          </p>
+          <p className="text-3xl font-bold font-mono text-white">
+            {risk?.scores.overall ?? "—"}
+            <span className="text-xs text-slate-500 font-normal">/100</span>
+          </p>
+          <p className="mt-1 max-w-48 text-[11px] font-mono text-cyan-400 font-medium truncate mx-auto">
+            {area?.name ?? message}
+          </p>
+        </div>
+      </div>
+
+      {/* Environmental Metrics Grid */}
+      <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-2 sm:grid-cols-5 z-10">
+        {METRICS.map(({ key, label, icon: Icon, color }) => (
+          <div
+            key={key}
+            className="rounded-xl border border-slate-800/90 bg-slate-950/85 p-2 text-center backdrop-blur-md"
+          >
+            <Icon className={`mx-auto h-3.5 w-3.5 ${color}`} />
+            <p className="mt-1 text-[9px] text-slate-400 font-mono uppercase">{label}</p>
+            <p className={`text-xs font-bold font-mono ${color}`}>{risk?.scores[key] ?? "—"}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

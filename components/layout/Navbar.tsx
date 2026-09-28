@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Menu, X, Globe, Sparkles, ArrowRight, Layers, Sliders } from "lucide-react";
+import { Activity, Menu, X, Globe, ArrowRight, Layers, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +23,8 @@ export function Navbar() {
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Explore", href: "/explore", icon: Globe },
-    { name: "Intelligence", href: "/explore", icon: Layers },
-    { name: "Simulator", href: "/explore", icon: Sliders },
-    { name: "AI Analyst", href: "/explore", icon: Sparkles },
+    { name: "Intelligence", href: "/analysis", icon: Layers },
+    { name: "Simulator", href: "/simulate", icon: Sliders },
     { name: "Methodology", href: "/methodology" },
     { name: "About", href: "/about" },
   ];
@@ -53,11 +52,8 @@ export function Navbar() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-cyan-200">
-                  UrbanPulse
-                </span>
-                <span className="text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-300">
-                  v2.4
-                </span>
+                  Aetherion CityIntel
+                </span>               
               </div>
               <span className="text-[10px] tracking-wider text-slate-400 font-mono uppercase">
                 Climate Intelligence
