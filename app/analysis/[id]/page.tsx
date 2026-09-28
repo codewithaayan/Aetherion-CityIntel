@@ -73,10 +73,22 @@ export default function AnalysisPage() {
   // Generate dynamic AI spatial hotspots for this specific area
   const hotspots: IntelligenceHotspot[] = useMemo(() => {
     if (!area) return [];
-    const geom = area.geometry?.coordinates;
-    const ring = Array.isArray(geom?.[0]) ? (geom[0] as Array<[number, number]>) : [];
-    const centerLon = ring.length > 0 ? (ring[0][0] + ring[1][0]) / 2 : 67.01;
-    const centerLat = ring.length > 0 ? (ring[0][1] + ring[2][1]) / 2 : 24.86;
+    const geom = area.geometry?.coordinates as unknown;
+
+    const ring: Array<[number, number]> =
+      Array.isArray(geom) && Array.isArray(geom[0])
+        ? (geom[0] as Array<[number, number]>)
+        : [];
+
+    const centerLon =
+      ring.length >= 2
+        ? (ring[0][0] + ring[1][0]) / 2
+        : 67.01;
+
+    const centerLat =
+      ring.length >= 3
+        ? (ring[0][1] + ring[2][1]) / 2
+        : 24.86;
 
     return [
       {

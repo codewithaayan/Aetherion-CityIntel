@@ -277,23 +277,23 @@ export function UrbanMap({
           return projectedGreen > 65
             ? "rgba(16, 185, 129, 0.75)"
             : projectedGreen > 40
-            ? "rgba(52, 211, 153, 0.65)"
-            : "rgba(120, 53, 15, 0.55)";
+              ? "rgba(52, 211, 153, 0.65)"
+              : "rgba(120, 53, 15, 0.55)";
         }
         if (activeLayer === "flood") {
           return projectedFlood > 70
             ? "rgba(30, 64, 175, 0.85)"
             : projectedFlood > 45
-            ? "rgba(14, 165, 233, 0.65)"
-            : "rgba(6, 182, 212, 0.45)";
+              ? "rgba(14, 165, 233, 0.65)"
+              : "rgba(6, 182, 212, 0.45)";
         }
         return projectedHeat > 80
           ? "rgba(220, 38, 38, 0.85)"
           : projectedHeat > 65
-          ? "rgba(249, 115, 22, 0.75)"
-          : projectedHeat > 50
-          ? "rgba(234, 179, 8, 0.65)"
-          : "rgba(34, 197, 94, 0.65)";
+            ? "rgba(249, 115, 22, 0.75)"
+            : projectedHeat > 50
+              ? "rgba(234, 179, 8, 0.65)"
+              : "rgba(34, 197, 94, 0.65)";
       }
 
       if (activeLayer === "green") {
@@ -377,8 +377,8 @@ export function UrbanMap({
               {mode === "simulator"
                 ? "SIMULATION MATRIX"
                 : mode === "intelligence"
-                ? "SPATIAL AI INTELLIGENCE"
-                : `${activeLayer.toUpperCase()} LAYER`}
+                  ? "SPATIAL AI INTELLIGENCE"
+                  : `${activeLayer.toUpperCase()} LAYER`}
             </span>
           </div>
 
@@ -474,9 +474,8 @@ export function UrbanMap({
           </defs>
 
           <g
-            transform={`translate(${pan.x + (viewWidth * (1 - zoom)) / 2}, ${
-              pan.y + (viewHeight * (1 - zoom)) / 2
-            }) scale(${zoom})`}
+            transform={`translate(${pan.x + (viewWidth * (1 - zoom)) / 2}, ${pan.y + (viewHeight * (1 - zoom)) / 2
+              }) scale(${zoom})`}
             style={{ transition: isDragging ? "none" : "transform 0.15s ease-out" }}
           >
             <g className="opacity-20 pointer-events-none">
@@ -544,8 +543,8 @@ export function UrbanMap({
                 spot.type === "thermal"
                   ? "#ef4444"
                   : spot.type === "flood"
-                  ? "#3b82f6"
-                  : "#10b981";
+                    ? "#3b82f6"
+                    : "#10b981";
 
               return (
                 <g
@@ -682,15 +681,21 @@ export function UrbanMap({
                 <div className="grid grid-cols-2 gap-2 text-[11px] rounded-lg bg-slate-950/80 p-2 border border-slate-800">
                   <div>
                     <span className="text-[9px] text-slate-400">SURFACE HEAT</span>
-                    <p className="text-red-400 font-bold">{p.temperature ?? "—"}°C</p>
+                    <p className="text-red-400 font-bold">
+                      {String(p.temperature ?? "—")}°C
+                    </p>
                   </div>
                   <div>
                     <span className="text-[9px] text-slate-400">CANOPY COVER</span>
-                    <p className="text-emerald-400 font-bold">{p.green_percentage ?? "—"}%</p>
+                    <p className="text-emerald-400 font-bold">
+                      {String(p.green_percentage ?? "—")}%
+                    </p>
                   </div>
                   <div>
                     <span className="text-[9px] text-slate-400">PRECIPITATION</span>
-                    <p className="text-blue-400 font-bold">{p.rainfall ?? "—"} mm</p>
+                    <p className="text-blue-400 font-bold">
+                      {String(p.rainfall ?? "—")}mm
+                    </p>
                   </div>
                   <div>
                     <span className="text-[9px] text-slate-400">POPULATION</span>
@@ -714,8 +719,8 @@ export function UrbanMap({
                 activeLayer === "heat"
                   ? "bg-gradient-to-r from-yellow-400 via-amber-500 to-red-600"
                   : activeLayer === "green"
-                  ? "bg-gradient-to-r from-amber-800 via-lime-500 to-emerald-500"
-                  : "bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-800"
+                    ? "bg-gradient-to-r from-amber-800 via-lime-500 to-emerald-500"
+                    : "bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-800"
               )}
             />
             <span className="text-slate-400">CRITICAL</span>
