@@ -130,7 +130,7 @@ export function HeroVisual() {
       </div>
 
       {/* Environmental Metrics Grid */}
-      <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-1.5 sm:bottom-5 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
+      <div className="absolute bottom-3 left-4 right-4 z-10 grid grid-cols-3 gap-1.5 sm:bottom-5 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
         {METRICS.map(({ key, label, icon: Icon, color }) => (
           <div
             key={key}
