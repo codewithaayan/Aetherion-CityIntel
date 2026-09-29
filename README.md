@@ -1,6 +1,6 @@
-# UrbanPulse
+# Aetherion CityIntel
 
-UrbanPulse contains a Next.js frontend and FastAPI backend. The frontend reads the existing backend routes and does not substitute demonstration values when data or owner adapters are unavailable.
+Aetherion CityIntel contains a Next.js frontend and FastAPI backend. The frontend reads the existing backend routes and does not substitute demonstration values when data or owner adapters are unavailable.
 
 ## Local setup
 

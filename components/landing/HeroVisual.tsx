@@ -130,15 +130,19 @@ export function HeroVisual() {
       </div>
 
       {/* Environmental Metrics Grid */}
-      <div className="absolute bottom-6 left-6 right-6 grid grid-cols-2 gap-2 sm:grid-cols-5 z-10">
+      <div className="absolute bottom-1 left-4 right-4 grid grid-cols-3 gap-1.5 sm:bottom-4 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2 z-10">
         {METRICS.map(({ key, label, icon: Icon, color }) => (
           <div
             key={key}
-            className="rounded-xl border border-slate-800/90 bg-slate-950/85 p-2 text-center backdrop-blur-md"
+            className="rounded-xl border border-slate-800/90 bg-slate-950/85 p-1.5 sm:p-2 text-center backdrop-blur-md"
           >
-            <Icon className={`mx-auto h-3.5 w-3.5 ${color}`} />
-            <p className="mt-1 text-[9px] text-slate-400 font-mono uppercase">{label}</p>
-            <p className={`text-xs font-bold font-mono ${color}`}>{risk?.scores[key] ?? "—"}</p>
+            <Icon className={`mx-auto h-3 w-3 sm:h-3.5 sm:w-3.5 ${color}`} />
+            <p className="mt-0.5 text-[8px] sm:mt-1 sm:text-[9px] text-slate-400 font-mono uppercase">
+              {label}
+            </p>
+            <p className={`text-[11px] sm:text-xs font-bold font-mono ${color}`}>
+              {risk?.scores[key] ?? "—"}
+            </p>
           </div>
         ))}
       </div>

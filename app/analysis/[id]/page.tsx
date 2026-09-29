@@ -41,7 +41,7 @@ export default function AnalysisPage() {
     {
       role: "ai",
       message:
-        "UrbanPulse AI Diagnostic engine initialized. Satellite telemetry from Landsat-9 TIRS and Copernicus Sentinel-2 MSI ingested. Ask a question regarding microclimate vulnerabilities or select a spatial anomaly pin on the map.",
+        "Aetherion CityIntel AI Diagnostic engine initialized. Satellite telemetry from Landsat-9 TIRS and Copernicus Sentinel-2 MSI ingested. Ask a question regarding microclimate vulnerabilities or select a spatial anomaly pin on the map.",
     },
   ]);
   const [isAiResponding, setIsAiResponding] = useState(false);
@@ -321,7 +321,7 @@ export default function AnalysisPage() {
                     )}
                   >
                     <span className="text-[9px] font-bold uppercase tracking-wider block mb-1 text-cyan-400">
-                      {msg.role === "ai" ? "UrbanPulse AI" : "User"}
+                      {msg.role === "ai" ? "Aetherion CityIntel AI" : "User"}
                     </span>
                     {msg.message}
                   </div>
