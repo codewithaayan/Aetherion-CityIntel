@@ -107,7 +107,7 @@ export function HeroVisual() {
       </div>
 
       {/* Central Radar Circle */}
-      <div className="absolute left-0 right-0 top-[38%] z-20 flex -translate-y-1/2 justify-center px-4 pointer-events-none">
+      <div className="absolute left-0 right-0 top-[32%] z-20 flex -translate-y-1/2 justify-center px-4 pointer-events-none">
           <div className="relative mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90 shadow-[0_0_25px_rgba(6,182,212,0.25)]">
             <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-cyan-300" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -126,14 +126,9 @@ export function HeroVisual() {
             {area?.name ?? message}
           </p>
         </div>
-      </div>
 
       {/* Environmental Metrics Grid */}
-<<<<<<< HEAD
-      <<div className="absolute bottom-1 left-4 right-4 z-10 grid grid-cols-3 gap-1.5 sm:bottom-1 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
-=======
-      <div className="absolute bottom-3 left-4 right-4 z-10 grid grid-cols-3 gap-1.5 sm:bottom-5 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
->>>>>>> b2fbbfab4ff9753dc43b26a1ad11c2e18b881284
+      <div className="absolute bottom-0 left-3 right-3 z-10 grid grid-cols-3 gap-1.5 sm:bottom-1 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
         {METRICS.map(({ key, label, icon: Icon, color }) => (
           <div
             key={key}
