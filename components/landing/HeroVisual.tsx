@@ -107,10 +107,10 @@ export function HeroVisual() {
       </div>
 
       {/* Central Radar Circle */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="absolute inset-0 flex items-start justify-center pt-24 sm:items-center sm:pt-0 pointer-events-none">
         <div className="text-center">
-          <div className="relative mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90 shadow-[0_0_25px_rgba(6,182,212,0.25)]">
-            <Activity className="h-8 w-8 text-cyan-300" />
+          <div className="relative mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90 shadow-[0_0_25px_rgba(6,182,212,0.25)]">
+            <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-cyan-300" />
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500" />
