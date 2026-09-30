@@ -106,34 +106,45 @@ export function HeroVisual() {
         </select>
       </div>
 
-      {/* Central Radar Circle */}
-      <div className="absolute left-0 right-0 top-[32%] z-20 flex -translate-y-1/2 justify-center px-4 pointer-events-none">
-          <div className="relative mx-auto flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/90 shadow-[0_0_25px_rgba(6,182,212,0.25)]">
-            <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-cyan-300" />
+      {/* Central Risk Index */}
+      <div className="absolute left-0 right-0 top-[43%] z-20 flex -translate-y-1/2 justify-center px-4 pointer-events-none">
+        <div className="flex flex-col items-center text-center">
+          {/* Radar Circle */}
+          <div className="relative flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full border border-cyan-400/40 bg-slate-950/95 shadow-[0_0_30px_rgba(6,182,212,0.25)]">
+            <Activity className="h-8 w-8 sm:h-9 sm:w-9 text-cyan-300" />
+
             <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-cyan-500" />
             </span>
           </div>
-          <p className="mt-3 text-[10px] font-mono uppercase tracking-[0.2em] text-cyan-300/80">
+
+          {/* Risk Label */}
+          <p className="mt-4 text-[9px] font-mono uppercase tracking-[0.22em] text-cyan-300/80">
             Resilience Risk Index
           </p>
-          <p className="text-3xl font-bold font-mono text-white">
+
+          {/* Risk Value */}
+          <p className="mt-0.5 text-3xl font-bold font-mono leading-none text-white">
             {risk?.scores.overall ?? "—"}
-            <span className="text-xs text-slate-500 font-normal">/100</span>
+            <span className="ml-0.5 text-xs font-normal text-slate-500">
+              /100
+            </span>
           </p>
-          <p className="mt-1 max-w-48 text-[11px] font-mono text-cyan-400 font-medium truncate mx-auto">
+
+          {/* Area */}
+          <p className="mt-2 max-w-[180px] truncate text-[10px] font-mono font-medium text-cyan-400">
             {area?.name ?? message}
           </p>
         </div>
+      </div>
 
       {/* Environmental Metrics Grid */}
       <div className="absolute bottom-0 left-3 right-3 z-10 grid grid-cols-3 gap-1.5 sm:bottom-1 sm:left-6 sm:right-6 sm:grid-cols-5 sm:gap-2">
         {METRICS.map(({ key, label, icon: Icon, color }) => (
           <div
             key={key}
-            className="rounded-xl border border-slate-800/90 bg-slate-950/85 p-1.5 sm:p-2 text-center backdrop-blur-md"
-          >
+            className="rounded-xl border border-slate-800/90 bg-slate-950/90 px-1 py-2 text-center backdrop-blur-md">
             <Icon className={`mx-auto h-3 w-3 sm:h-3.5 sm:w-3.5 ${color}`} />
             <p className="mt-0.5 text-[8px] sm:mt-1 sm:text-[9px] text-slate-400 font-mono uppercase">
               {label}
